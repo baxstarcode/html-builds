@@ -8,6 +8,18 @@ which accounts to tag before you post.
 
 One HTML file. No build step, no framework, no account. Works as a home-screen app on a phone.
 
+## Visitor flow
+
+Add a photo, enter a business name and a one-sentence description, and press **Generate
+caption**. The business details are remembered in this browser. No account, API key, or
+script setup is needed. Optional voice, hashtag, tagging, and posting preferences live
+in the **Optional settings** panel; extra result controls stay collapsed until needed.
+
+Connection settings are owner tools. Open the page with `?advanced=1`, then **Optional
+settings**, to change the endpoint/token or test the connection. This only hides controls;
+it does not add authentication. Existing custom connections are preserved, and older
+saved setups with an empty URL and token automatically use the built-in free connection.
+
 ## What it does
 
 - **Photos in three ways.** Camera roll, the rear camera straight from the page, or drag and
@@ -37,7 +49,7 @@ Script web app) that adds the key, fixes the model and token budget, and enforce
 | Tier | How you get it | Limit |
 |---|---|---|
 | Free | Built in. The page ships with the owner's proxy URL and free token. | 10 captions per device, for life. Plus a daily ceiling across all free devices. |
-| Unlimited | The owner gives you a token; paste it under Settings → Caption endpoint. | None |
+| Unlimited | The owner gives you a token; paste it in the owner connection settings (`?advanced=1`). | None |
 | Your own proxy | Deploy `Code.gs` yourself with your own key. | Whatever you set in `CONFIG` |
 
 When the free captions run out, the page shows a wall with the owner's message and a link.
@@ -52,7 +64,7 @@ actually protects the bill is `FREE_DAILY_CEILING` in `Code.gs`: once all free d
 together hit it, the free tier pauses until the next UTC day. The fixed model and
 `MAX_TOKENS` cap the cost of any single call.
 
-The Settings → Test endpoint button uses a `_ping` request. The proxy answers it with a fixed
+The owner settings → Test connection button uses a `_ping` request. The proxy answers it with a fixed
 tiny prompt and never counts it.
 
 ## Deploying the proxy (the owner does this once)
@@ -64,7 +76,7 @@ tiny prompt and never counts it.
 4. Deploy → New deployment → Web app, execute as **Me**, access **Anyone**. Copy the `/exec` URL.
 5. Open `index.html` and set `FREE_PROXY_URL` and `FREE_PROXY_TOKEN` at the top of the
    script. Commit. Every visitor now gets the free tier with zero setup.
-6. Open the live page → Settings → **Test endpoint**. It should answer "ready" and report
+6. Open the live page with `?advanced=1` → Optional settings → **Test connection**. It should answer "ready" and report
    0 of 10 used.
 
 After any edit to `Code.gs`: Deploy → Manage deployments → pencil → New version → Deploy.

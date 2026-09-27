@@ -222,7 +222,13 @@
     transform:translateX(100%);transition:transform .22s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;
     padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 30px);
   }
-  .panel.open{transform:translateX(0);}
+  .panel{visibility:hidden;}
+  .panel.open{transform:translateX(0);visibility:visible;}
+  .optional{border-top:1px solid var(--line-strong);padding:14px 0;}
+  .optional summary{cursor:pointer;color:var(--silver-2);font-size:14px;min-height:44px;display:list-item;padding:10px 0;}
+  .optional summary:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+  .quick-help{font-size:12.5px;color:var(--muted);margin:12px 0 0;}
+  .free-note{text-align:center;font-size:12px;color:var(--silver-2);margin:10px 0;}
   .panel h2{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.16em;font-size:17px;color:#fff;margin:0;display:flex;align-items:center;justify-content:space-between;}
   .panel h2 button{background:transparent;border:1px solid var(--line-strong);color:var(--silver-2);border-radius:6px;width:36px;height:36px;font-size:18px;cursor:pointer;}
   .panel h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:13px;color:var(--accent-soft);margin:24px 0 4px;}
@@ -232,7 +238,6 @@
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .swatch{display:flex;align-items:center;gap:10px;}
   .swatch input[type=color]{width:46px;height:38px;border:1px solid var(--line-strong);border-radius:4px;background:var(--ink);padding:2px;cursor:pointer;}
-  .welcome{background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.4);border-radius:4px;padding:12px 13px;font-size:13px;line-height:1.5;margin-top:14px;color:var(--text);}
   .panel .actions{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap;}
   .panel .actions .btn{flex:1;min-width:120px;}
 
@@ -284,13 +289,13 @@
 <div class="wrap">
 
   <header>
-    <button class="gear" id="openSettings" type="button" aria-label="Settings" title="Settings">
+    <button class="gear" id="openSettings" type="button" aria-label="Optional settings" title="Optional settings">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
     </button>
     <p class="biz" id="hBiz">Your Business</p>
     <div class="rule"><span class="seg"></span><svg class="sparkle" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z"/></svg><span class="seg red"></span></div>
     <p class="product">Caption&nbsp;Studio</p>
-    <p class="lede">Photo in. On-brand caption out. Copy it, post it.</p>
+    <p class="lede">Add a photo. Tell us about your business. Get a caption.</p>
   </header>
 
   <!-- STEP 1: PHOTOS -->
@@ -310,6 +315,13 @@
     <div class="thumbs" id="thumbs"></div>
   </div>
 
+  <section class="card" aria-labelledby="businessHeading">
+    <h2 class="step" id="businessHeading"><span class="n">02</span> Your business</h2>
+    <div class="fld"><label class="field" for="quickBiz">Business name</label><input class="txt" id="quickBiz" placeholder="Northshore Bakery" autocomplete="organization" maxlength="160" required /></div>
+    <div class="fld"><label class="field" for="quickIndustry">What do you do?</label><input class="txt" id="quickIndustry" placeholder="A neighborhood bakery and coffee shop" maxlength="500" required /></div>
+    <p class="quick-help">Just a sentence. We'll remember it on this browser.</p>
+  </section>
+
   <div class="card hidden" id="queueBar">
     <p class="step"><span class="n">!</span> Saved draft</p>
     <div class="sub" id="queueInfo" style="color:var(--muted);font-size:12.5px;"></div>
@@ -317,7 +329,9 @@
     <button class="btn btn-copy" id="queueDrop">Discard it</button>
   </div>
 
-  <button class="btn btn-primary" id="analyze" disabled>Read photo &amp; draft</button>
+  <button class="btn btn-primary" id="analyze" disabled>Generate caption</button>
+  <p class="free-note">10 free captions per device. No account or setup needed.</p>
+  <button class="btn btn-ghost" id="optionalSettings" type="button">Optional: voice, hashtags &amp; tagging</button>
   <div class="meter hidden" id="meter"><div class="mtxt" id="meterTxt"></div><div class="mbar"><i id="meterBar"></i></div></div>
   <div id="errBox"></div>
 
@@ -326,15 +340,15 @@
     <p class="wtitle" id="wallTitle">That's the free ten</p>
     <p id="wallMsg"></p>
     <a class="btn btn-primary" id="wallLink" href="https://www.bradybaxter.com" target="_blank" rel="noopener">Contact Brady and let's build your own tool</a>
-    <p class="wsub">Already have a token? Paste it under Settings → Caption endpoint.</p>
+    <p class="wsub">Want more captions? Get in touch with Brady using the button above.</p>
   </div>
 
   <!-- RESULTS -->
   <div id="results" class="hidden">
 
     <div class="card" style="margin-top:14px">
-      <p class="step"><span class="n">02</span> The line</p>
-      <textarea class="txt" id="caption" placeholder="Caption..."></textarea>
+      <p class="step"><span class="n">03</span> Your caption</p>
+      <textarea aria-label="Your caption" class="txt" id="caption" placeholder="Caption..."></textarea>
       <div class="row" id="sigRow" style="margin-top:6px">
         <div class="lab">Signature tag <small id="sigHint"></small></div>
         <label class="switch"><input type="checkbox" id="sig" /><span></span></label>
@@ -342,8 +356,10 @@
       <p class="note hidden" id="notes"></p>
     </div>
 
+    <details class="optional">
+      <summary>Optional: tags, location &amp; timing</summary>
     <div class="card">
-      <p class="step"><span class="n">03</span> Confirm mentions</p>
+      <p class="step">Accounts to tag</p>
       <p class="note" style="margin-top:-4px;margin-bottom:12px">Tap to toggle. Only confirmed accounts go on the tag list, so a wrong account never gets tagged.</p>
       <div class="chips" id="chips"></div>
       <div class="fld">
@@ -353,7 +369,7 @@
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">04</span> Tags &amp; timing</p>
+      <p class="step">Tags &amp; timing</p>
       <label class="field" id="hashLabel">Hashtags</label>
       <input class="txt" id="hashtags" placeholder="#yourtag #another" />
       <div class="fld" id="timeWrap">
@@ -362,6 +378,7 @@
       </div>
     </div>
 
+    </details>
     <div class="card">
       <p class="step"><svg class="sparkle" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z"/></svg> Ready to post</p>
       <div class="preview" id="preview"></div>
@@ -369,12 +386,12 @@
       <button class="btn btn-copy" id="copy">Copy caption</button>
       <button class="btn btn-copy" id="share">Share photo + caption</button>
 
-      <div class="composer">
-        <p class="ctitle">Then in Instagram, before you share</p>
+      <details class="composer">
+        <summary class="ctitle">Optional: tagging when you post</summary>
         <div class="crow"><div class="ckey">Tag people</div><div class="cval" id="cHandles"></div></div>
         <div class="crow"><div class="ckey">Location</div><div class="cval" id="cPlace"></div></div>
-        <p class="chint">Tagging in Instagram's own field notifies the account and shows on the photo. An @ typed into the caption does neither, and doing both tags everyone twice. Facebook has the same two fields.</p>
-      </div>
+        <p class="chint">Use your social app's tagging and location options to add the accounts and place listed here.</p>
+      </details>
     </div>
 
   </div>
@@ -389,68 +406,65 @@
 
 <!-- SETTINGS -->
 <div class="scrim" id="scrim"></div>
-<aside class="panel" id="panel" aria-label="Settings">
-  <h2>Settings <button type="button" id="closeSettings" aria-label="Close">&times;</button></h2>
-  <div class="welcome hidden" id="welcome">
-    <b>Welcome.</b> Fill in your business below and press Save. The built-in endpoint gives
-    every device a free trial; after that, the tool tells you how to get your own.
-  </div>
-
+<aside class="panel" id="panel" aria-label="Optional settings" role="dialog" aria-modal="true" inert>
+  <h2>Make it yours <button type="button" id="closeSettings" aria-label="Close">&times;</button></h2>
+  <p class="help" style="margin-top:14px">Everything here is optional. You can generate your first caption without changing a thing.</p>
+  <details class="optional"><summary>Business details &amp; voice</summary>
   <h3>Your business</h3>
-  <div class="fld"><label class="field">Business name</label><input class="txt" id="sBiz" placeholder="Northshore Bakery" /></div>
+  <div class="fld"><label class="field" for="sBiz">Business name</label><input class="txt" id="sBiz" placeholder="Northshore Bakery" /></div>
   <div class="two">
-    <div class="fld"><label class="field">Website</label><input class="txt" id="sSite" placeholder="northshorebakery.com" /></div>
-    <div class="fld"><label class="field">Location</label><input class="txt" id="sLoc" placeholder="Duluth, Minnesota" /></div>
+    <div class="fld"><label class="field" for="sSite">Website</label><input class="txt" id="sSite" placeholder="northshorebakery.com" /></div>
+    <div class="fld"><label class="field" for="sLoc">Location</label><input class="txt" id="sLoc" placeholder="Duluth, Minnesota" /></div>
   </div>
-  <div class="fld"><label class="field">What you do <small>One line. The model uses it to understand your photos.</small></label><input class="txt" id="sIndustry" placeholder="Sourdough bakery and coffee bar" /></div>
-  <div class="fld"><label class="field">Voice <small>How captions should sound.</small></label><textarea class="txt" id="sVoice" placeholder="Warm, a little playful, never salesy. Short sentences. Talk like a regular, not a brand."></textarea></div>
-  <div class="fld"><label class="field">Never say <small>Optional. Words, claims, or topics to keep out of captions.</small></label><input class="txt" id="sAvoid" placeholder="prices, 'best in town', discounts" /></div>
+  <div class="fld"><label class="field" for="sIndustry">What you do <small>One line. The model uses it to understand your photos.</small></label><input class="txt" id="sIndustry" placeholder="Sourdough bakery and coffee bar" /></div>
+  <div class="fld"><label class="field" for="sVoice">Voice <small>How captions should sound.</small></label><textarea class="txt" id="sVoice" placeholder="Warm, a little playful, never salesy. Short sentences. Talk like a regular, not a brand."></textarea></div>
+  <div class="fld"><label class="field" for="sAvoid">Never say <small>Optional. Words, claims, or topics to keep out of captions.</small></label><input class="txt" id="sAvoid" placeholder="prices, 'best in town', discounts" /></div>
 
-  <h3>Hashtags</h3>
+  </details>
+  <details class="optional"><summary>Hashtag preferences</summary>
   <div class="two">
-    <div class="fld"><label class="field">Max hashtags per post</label><input class="txt" id="sCap" type="number" min="0" max="30" value="5" /></div>
-    <div class="fld"><label class="field">Signature tag <small>Optional. One tag, toggled per post.</small></label><input class="txt" id="sSig" placeholder="#northshorebakes" /></div>
+    <div class="fld"><label class="field" for="sCap">Max hashtags per post</label><input class="txt" id="sCap" type="number" min="0" max="30" value="5" /></div>
+    <div class="fld"><label class="field" for="sSig">Signature tag <small>Optional. One tag, toggled per post.</small></label><input class="txt" id="sSig" placeholder="#northshorebakes" /></div>
   </div>
-  <div class="fld"><label class="field">Always-on hashtags <small>Optional. Added to every post, count toward the max.</small></label><input class="txt" id="sAlways" placeholder="#duluth #shoplocal" /></div>
+  <div class="fld"><label class="field" for="sAlways">Always-on hashtags <small>Optional. Added to every post, count toward the max.</small></label><input class="txt" id="sAlways" placeholder="#duluth #shoplocal" /></div>
 
-  <h3>Accounts to tag</h3>
+  </details>
+  <details class="optional"><summary>Accounts to tag</summary>
   <p class="help">One per line: <code>Label | @handle @handle2 | what to look for in the photo</code>.
     Leave the third part empty for a manual-only toggle.</p>
-  <textarea class="txt tall" id="sMentions" placeholder="Vexus boat | @therealvexusboats | a Vexus bass boat or the word Vexus on a boat
+  <textarea aria-label="Accounts to tag" class="txt tall" id="sMentions" placeholder="Vexus boat | @therealvexusboats | a Vexus bass boat or the word Vexus on a boat
 Mercury motor | @mercurymarine | an outboard motor
 Local chamber | @cityofduluth |"></textarea>
 
-  <h3>Posting</h3>
-  <div class="fld"><label class="field">Post-time options <small>Comma separated. Shown as a reminder, leave empty to hide.</small></label><input class="txt" id="sTimes" placeholder="8 AM, Noon, 6 PM" /></div>
-  <div class="fld swatch"><label class="field" style="margin:0">Accent color</label><input type="color" id="sAccent" value="#c1272d" /></div>
+  </details>
+  <details class="optional"><summary>Posting reminders &amp; color</summary>
+  <div class="fld"><label class="field" for="sTimes">Post-time options <small>Comma separated. Shown as a reminder, leave empty to hide.</small></label><input class="txt" id="sTimes" placeholder="8 AM, Noon, 6 PM" /></div>
+  <div class="fld swatch"><label class="field" for="sAccent" style="margin:0">Accent color</label><input type="color" id="sAccent" value="#c1272d" /></div>
 
-  <h3>Caption endpoint</h3>
+  </details>
+  <!-- Owner tools are available only through ?advanced=1; this is not an access-control boundary. -->
+  <section id="ownerTools" class="hidden">
+  <h3>Connection settings</h3>
   <p class="help" id="tierHelp"></p>
-  <p class="help">The tool never holds an AI key. It posts photos to a small proxy, which adds the key and calls the model.
-    To run your own, setup takes about ten minutes with the included <code>Code.gs</code> script.</p>
-  <ol>
-    <li>Open <a href="https://script.google.com" target="_blank" rel="noopener">script.google.com</a>, new project, paste <code>proxy/Code.gs</code>.</li>
-    <li>Project Settings &rarr; Script Properties: add <code>ANTHROPIC_API_KEY</code> and <code>PROXY_TOKEN</code> (any long random string).</li>
-    <li>Deploy &rarr; New deployment &rarr; Web app, execute as <b>Me</b>, access <b>Anyone</b>. Copy the <code>/exec</code> URL.</li>
-    <li>Paste the URL and the same token below, then Test.</li>
-  </ol>
-  <div class="fld"><label class="field">Proxy URL</label><input class="txt" id="sProxy" type="url" placeholder="https://script.google.com/macros/s/.../exec" /></div>
-  <div class="fld"><label class="field">Proxy token</label><input class="txt" id="sToken" placeholder="must match PROXY_TOKEN in Script Properties" /></div>
-  <div id="testBox"></div>
+  <div class="fld"><label class="field" for="sProxy">Proxy URL</label><input class="txt" id="sProxy" type="url" placeholder="https://script.google.com/macros/s/.../exec" /></div>
+  <div class="fld"><label class="field" for="sToken">Proxy token</label><input class="txt" id="sToken" placeholder="must match PROXY_TOKEN in Script Properties" /></div>
+  <button class="btn btn-ghost" id="testProxy" type="button">Test connection</button>
+  <p class="help">Device id: <code id="deviceId"></code></p>
+  </section>
+  <div id="testBox" role="status"></div>
 
   <div class="actions">
     <button class="btn btn-primary" id="saveSettings" type="button">Save</button>
-    <button class="btn btn-ghost" id="testProxy" type="button">Test endpoint</button>
   </div>
+  <details class="optional" style="margin-top:18px"><summary>Backup or reset preferences</summary>
   <div class="actions" style="margin-top:8px">
     <button class="btn btn-ghost" id="exportCfg" type="button">Export setup</button>
     <button class="btn btn-ghost" id="importCfg" type="button">Import setup</button>
     <button class="btn btn-ghost" id="resetCfg" type="button">Reset</button>
   </div>
   <input type="file" id="importFile" accept="application/json,.json" />
-  <p class="help" style="margin-top:16px">Settings live only in this browser. Export to move them to another phone or hand a
-    finished setup to a client. The export includes the proxy token, so share it like a password.</p>
-  <p class="help">Device id: <code id="deviceId"></code></p>
+  <p class="help" style="margin-top:16px">Preferences are saved on this browser. Export a backup to use on another device. Keep exported files private.</p>
+  </details>
 </aside>
 
 <script>
@@ -492,7 +506,10 @@ let usage = loadUsage();
 function loadCfg(){
   try {
     const raw = JSON.parse(localStorage.getItem(CFG_KEY) || "null");
-    return Object.assign({}, DEFAULTS, raw || {});
+    const loaded = Object.assign({}, DEFAULTS, raw || {});
+    // Migrate saved setups from before the built-in connection was published.
+    if (!loaded.proxyUrl && !loaded.proxyToken){ loaded.proxyUrl = FREE_PROXY_URL; loaded.proxyToken = FREE_PROXY_TOKEN; }
+    return loaded;
   } catch { return Object.assign({}, DEFAULTS); }
 }
 function saveCfg(){
@@ -604,6 +621,8 @@ let TIMES = [];
 let postTime = "";
 
 function applyCfg(){
+  $("quickBiz").value = cfg.business;
+  $("quickIndustry").value = cfg.industry;
   MENTIONS = parseMentions(cfg.mentionsText);
   TIMES = parseTimes(cfg.times);
   postTime = TIMES[0] || "";
@@ -657,7 +676,6 @@ const FIELDS = {
 function fillSettings(src){
   src = src || cfg;
   for (const k in FIELDS) $(FIELDS[k]).value = src[k] ?? "";
-  $("welcome").classList.toggle("hidden", hasSavedCfg());
   if (src === cfg) $("testBox").innerHTML = "";
   $("deviceId").textContent = clientId();
   const th = $("tierHelp");
@@ -685,12 +703,44 @@ function readSettings(){
   for (const k of ["business","site","location","industry","signature","always","times"]) next[k] = next[k].trim();
   return next;
 }
-function openSettings(){ fillSettings(); $("panel").classList.add("open"); $("scrim").classList.add("open"); }
+let settingsOpener;
+function saveQuickBusiness(){
+  const business = $("quickBiz").value.trim(), industry = $("quickIndustry").value.trim();
+  if (cfg.business === business && cfg.industry === industry) return;
+  cfg.business = business; cfg.industry = industry;
+  pendingRid = null;
+  saveCfg();
+}
+["quickBiz", "quickIndustry"].forEach(id => {
+  $(id).addEventListener("input", saveQuickBusiness);
+  $(id).addEventListener("change", () => {
+    saveQuickBusiness(); applyCfg();
+    if (!$("results").classList.contains("hidden")) build();
+  });
+});
+function openSettings(){
+  saveQuickBusiness(); settingsOpener = document.activeElement; fillSettings();
+  $("panel").inert = false;
+  $("panel").classList.add("open"); $("scrim").classList.add("open");
+  $("closeSettings").focus();
+}
 function closeSettings(){
+  $("panel").inert = true;
   $("panel").classList.remove("open"); $("scrim").classList.remove("open");
   applyAccent(cfg.accent);   // drop an unsaved color preview
+  if (settingsOpener) settingsOpener.focus();
 }
 $("openSettings").addEventListener("click", openSettings);
+$("optionalSettings").addEventListener("click", openSettings);
+$("panel").addEventListener("keydown", e => {
+  if (e.key === "Escape"){ e.preventDefault(); closeSettings(); }
+  if (e.key === "Tab"){
+    const focusable = Array.from($("panel").querySelectorAll('button,input,textarea,summary,a[href]')).filter(el => !el.disabled && el.getClientRects().length);
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  }
+});
 $("closeSettings").addEventListener("click", closeSettings);
 $("scrim").addEventListener("click", closeSettings);
 $("sAccent").addEventListener("input", e => applyAccent(e.target.value));
@@ -701,6 +751,7 @@ $("saveSettings").addEventListener("click", () => {
   if (next.proxyUrl && !/^https:\/\/\S+$/i.test(next.proxyUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(next.proxyUrl)){
     testMsg("The proxy URL needs to start with https://", true); return;
   }
+  pendingRid = null;
   cfg = Object.assign({}, DEFAULTS, next);
   if (!saveCfg()) return;
   // Mention keys are line positions. Carry the confirmed toggles across an edited list
@@ -714,7 +765,7 @@ $("saveSettings").addEventListener("click", () => {
   if (!$("results").classList.contains("hidden")){ renderChips(); build(); }
   closeSettings();
   $("errBox").innerHTML = "";
-  if (!isConfigured()) showError("Add a proxy URL under Settings → Caption endpoint before reading a photo.");
+  if (!isConfigured()) showError("Caption generation is temporarily unavailable. Please try again later.");
 });
 
 function testMsg(msg, bad){
@@ -903,7 +954,13 @@ let pendingRid = null;
 
 async function analyze(){
   $("errBox").innerHTML = "";
-  if (!isConfigured()){ openSettings(); showError("Add an endpoint under Settings → Caption endpoint first."); return; }
+  if (!isConfigured()){ showError("Caption generation is temporarily unavailable. Please try again later."); return; }
+  if (!images.length){ showError("Add a photo first."); return; }
+  for (const id of ["quickBiz", "quickIndustry"]){
+    $(id).value = $(id).value.trim();
+    if (!$(id).reportValidity()) return;
+  }
+  saveQuickBusiness();
   if (limitReached()){ renderUsage(); return; }
   const btn = $("analyze");
   btn.disabled = true;
@@ -915,6 +972,7 @@ async function analyze(){
   pendingRid = rid;
   const url = cfg.proxyUrl, token = cfg.proxyToken, key = endpointKey();
 
+  clearQueue();
   try {
     let data;
     try {
@@ -928,7 +986,7 @@ async function analyze(){
       // before it got a response — most often the Apps Script deployment's access
       // isn't set to "Anyone". Name that possibility instead of always blaming signal.
       const cause = navigator.onLine
-        ? "No signal, or the caption endpoint isn't reachable (check it's deployed with access set to Anyone)."
+        ? "We couldn't reach the caption service. Please try again in a moment."
         : "No signal.";
       if (images.length){
         const kept = queueDraft(rid);
@@ -939,12 +997,12 @@ async function analyze(){
           return;
         }
       }
-      showError(`${cause} Tap "Re-read photo" to try again.`);
+      showError(`${cause} Try generating the caption again.`);
       return;
     }
 
     pendingRid = null;   // the proxy answered; whatever it said, this attempt is settled
-    if (!data || typeof data !== "object"){ showError("The caption service sent an empty reply. Tap Re-read photo to try again."); return; }
+    if (!data || typeof data !== "object"){ showError("The caption service sent an empty reply. Try generating the caption again."); return; }
     if (data._usage) saveUsage(data._usage, key);
     if (data.error){
       if (errType(data.error) === "limit_reached"){
@@ -956,12 +1014,12 @@ async function analyze(){
     }
     let out;
     try { out = JSON.parse(extractText(data)); }
-    catch { showError("The model answered but not in the expected format. Tap Re-read photo to try again."); return; }
+    catch { showError("The model answered but not in the expected format. Try generating the caption again."); return; }
     try { fillResults(out); }
-    catch (err){ console.error(err); showError("Couldn't lay out the result. Tap Re-read photo to try again."); }
+    catch (err){ console.error(err); showError("Couldn't lay out the result. Try generating the caption again."); }
   } finally {
     btn.disabled = false;
-    btn.textContent = images.length ? "Re-read photo" : "Read photo & draft";
+    btn.textContent = lastResult ? "Generate another caption" : "Generate caption";
   }
 }
 
@@ -1160,8 +1218,7 @@ $("queueGo").addEventListener("click", () => {
   pendingRid = room >= q.photos.length && typeof q.rid === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(q.rid) ? q.rid : null;
   // A draft is worth losing only once it has actually been sent. If Settings isn't ready
   // or the free tier is out, keep it in storage so a reload doesn't throw it away.
-  if (!isConfigured() || limitReached()){ openSettings(); return; }
-  clearQueue();
+  if (!isConfigured() || limitReached()){ renderUsage(); return; }
   analyze();
 });
 $("queueDrop").addEventListener("click", clearQueue);
@@ -1182,7 +1239,7 @@ async function refreshUsage(){
 applyCfg();
 renderUsage();
 offerQueue();
-if (!hasSavedCfg() || !isConfigured()) openSettings();
+$("ownerTools").classList.toggle("hidden", new URLSearchParams(location.search).get("advanced") !== "1");
 if (limitReached()) refreshUsage();
 
 // Test hooks for automated checks. Carry no behavior.
