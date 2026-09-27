@@ -60,7 +60,7 @@
 var CONFIG = {
   ANTHROPIC_URL: 'https://api.anthropic.com/v1/messages',
   ANTHROPIC_VERSION: '2023-06-01',
-  MODEL: 'claude-sonnet-4-6',   // vision-capable; change here only, never from the page
+  MODEL: 'claude-sonnet-5',     // vision-capable; change here only, never from the page
   MAX_TOKENS: 1200,
 
   FREE_LIMIT: 10,               // captions per device, for life, on the free token. 0 = no per-device limit
