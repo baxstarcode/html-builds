@@ -528,16 +528,17 @@ function loadUsage(){
     return u && typeof u === "object" ? u : null;
   } catch { return null; }
 }
-function saveUsage(u){
-  usage = u && typeof u === "object" ? Object.assign({}, u, { endpoint: cfg.proxyUrl + "|" + cfg.proxyToken }) : null;
+function saveUsage(u, key){
+  // `key` is the endpoint the request actually went to; Settings may have changed mid-flight.
+  usage = u && typeof u === "object" ? Object.assign({}, u, { endpoint: key || endpointKey() }) : null;
   try { usage ? localStorage.setItem(USAGE_KEY, JSON.stringify(usage)) : localStorage.removeItem(USAGE_KEY); } catch {}
   renderUsage();
 }
 function limitReached(){
-  return !!(usage && usage.endpoint === cfg.proxyUrl + "|" + cfg.proxyToken && usage.limit && usage.remaining !== null && usage.remaining <= 0);
+  return !!(usage && usage.endpoint === endpointKey() && usage.limit && usage.remaining !== null && usage.remaining <= 0);
 }
 function renderUsage(){
-  const current = usage && usage.endpoint === cfg.proxyUrl + "|" + cfg.proxyToken ? usage : null;
+  const current = usage && usage.endpoint === endpointKey() ? usage : null;
   const meter = $("meter");
   if (current && current.limit){
     const used = Math.min(current.used || 0, current.limit);
@@ -637,6 +638,15 @@ function applyCfg(){
 }
 
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function escText(s){ return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function randomId(){
+  try { return crypto.randomUUID().replace(/-/g, ""); }
+  catch { return Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join(""); }
+}
+/* Short non-secret fingerprint so the usage record can be tied to an endpoint
+   without writing the token itself into a second storage key. */
+function fp(s){ let h = 5381; for (const ch of String(s)) h = ((h << 5) + h + ch.charCodeAt(0)) | 0; return (h >>> 0).toString(36); }
+function endpointKey(){ return cfg.proxyUrl + "|" + fp(cfg.proxyToken); }
 
 /* ---------- Settings panel ---------- */
 const FIELDS = {
@@ -644,13 +654,14 @@ const FIELDS = {
   cap:"sCap", signature:"sSig", always:"sAlways", mentionsText:"sMentions", times:"sTimes",
   accent:"sAccent", proxyUrl:"sProxy", proxyToken:"sToken"
 };
-function fillSettings(){
-  for (const k in FIELDS) $(FIELDS[k]).value = cfg[k] ?? "";
+function fillSettings(src){
+  src = src || cfg;
+  for (const k in FIELDS) $(FIELDS[k]).value = src[k] ?? "";
   $("welcome").classList.toggle("hidden", hasSavedCfg());
-  $("testBox").innerHTML = "";
+  if (src === cfg) $("testBox").innerHTML = "";
   $("deviceId").textContent = clientId();
   const th = $("tierHelp");
-  const u = usage && usage.endpoint === cfg.proxyUrl + "|" + cfg.proxyToken ? usage : null;
+  const u = usage && usage.endpoint === endpointKey() ? usage : null;
   if (u && u.limit){
     th.textContent = `This endpoint has a free limit: ${Math.min(u.used || 0, u.limit)} of ${u.limit} captions used on this device. Paste a token without a limit below to remove it.`;
   } else if (u && u.tier === "unlimited"){
@@ -675,7 +686,10 @@ function readSettings(){
   return next;
 }
 function openSettings(){ fillSettings(); $("panel").classList.add("open"); $("scrim").classList.add("open"); }
-function closeSettings(){ $("panel").classList.remove("open"); $("scrim").classList.remove("open"); }
+function closeSettings(){
+  $("panel").classList.remove("open"); $("scrim").classList.remove("open");
+  applyAccent(cfg.accent);   // drop an unsaved color preview
+}
 $("openSettings").addEventListener("click", openSettings);
 $("closeSettings").addEventListener("click", closeSettings);
 $("scrim").addEventListener("click", closeSettings);
@@ -689,7 +703,13 @@ $("saveSettings").addEventListener("click", () => {
   }
   cfg = Object.assign({}, DEFAULTS, next);
   if (!saveCfg()) return;
+  // Mention keys are line positions. Carry the confirmed toggles across an edited list
+  // by matching handles, so inserting a line doesn't arm the wrong account.
+  const prevOn = {};
+  MENTIONS.forEach(m => { if (mentionState[m.key]) prevOn[m.handles.join(" ")] = true; });
   applyCfg();
+  mentionState = {};
+  MENTIONS.forEach(m => mentionState[m.key] = !!prevOn[m.handles.join(" ")]);
   renderUsage();
   if (!$("results").classList.contains("hidden")){ renderChips(); build(); }
   closeSettings();
@@ -736,8 +756,8 @@ $("importFile").addEventListener("change", async e => {
     if (!obj || typeof obj !== "object") throw new Error("bad");
     const merged = Object.assign({}, DEFAULTS);
     for (const k in DEFAULTS) if (k in obj) merged[k] = typeof DEFAULTS[k] === "number" ? (+obj[k] || 0) : String(obj[k] ?? "");
-    cfg = merged;
-    fillSettings(); applyAccent(cfg.accent);
+    // Fill the form only. Nothing is live until Save runs its validation.
+    fillSettings(merged); applyAccent(merged.accent);
     testMsg("Setup loaded. Press Save to keep it.");
   } catch { testMsg("That file isn't a Caption Studio setup export.", true); }
 });
@@ -745,7 +765,9 @@ $("resetCfg").addEventListener("click", () => {
   if (!confirm("Clear every setting on this device?")) return;
   cfg = Object.assign({}, DEFAULTS);
   try { localStorage.removeItem(CFG_KEY); } catch {}
+  saveUsage(null);
   fillSettings(); applyCfg(); renderUsage();
+  if (!$("results").classList.contains("hidden")){ mentionState = {}; renderChips(); build(); }
 });
 
 /* =============================================================================
@@ -770,8 +792,12 @@ $("snap").addEventListener("click", () => $("camera").click());
 $("drop").addEventListener("drop", e => { if (e.dataTransfer && e.dataTransfer.files.length) intake(e.dataTransfer.files); });
 
 async function intake(fileList){
-  const files = Array.from(fileList).filter(f => !f.type || f.type.startsWith("image/")).slice(0, MAX_PHOTOS - images.length);
+  // Math.max: once images.length >= MAX_PHOTOS this must be 0, not negative — a
+  // negative slice end counts from the array's end and would still admit files.
+  const room = Math.max(0, MAX_PHOTOS - images.length);
+  const files = Array.from(fileList).filter(f => !f.type || f.type.startsWith("image/")).slice(0, room);
   if (!files.length && images.length >= MAX_PHOTOS){ showError(`Up to ${MAX_PHOTOS} photos per draft.`); return; }
+  $("queueBar").classList.add("hidden");   // a fresh photo means this session isn't resuming the queued draft
   for (const f of files){
     try {
       const img = await downscale(f);
@@ -811,6 +837,7 @@ function downscale(file){
 }
 
 function renderThumbs(){
+  pendingRid = null;   // the photo set changed: the next read is a new request
   $("thumbs").innerHTML = images.map((im, i) =>
     `<div class="thumb"><img src="${im.dataUrl}" alt=""><button type="button" data-i="${i}" aria-label="Remove photo">×</button></div>`
   ).join("");
@@ -868,6 +895,12 @@ function extractText(data){
 
 $("analyze").addEventListener("click", analyze);
 
+/* Request id for the attempt in flight. It survives a network failure so the retry
+   (or the queued draft) carries the same id and the proxy returns the reply it already
+   charged for instead of charging again. Any answer from the proxy, or a change to the
+   photos, ends the attempt and the next one gets a fresh id. */
+let pendingRid = null;
+
 async function analyze(){
   $("errBox").innerHTML = "";
   if (!isConfigured()){ openSettings(); showError("Add an endpoint under Settings → Caption endpoint first."); return; }
@@ -878,14 +911,45 @@ async function analyze(){
 
   const content = images.map(im => ({ type:"image", source:{ type:"base64", media_type:im.mediaType, data:im.b64 } }));
   content.push({ type:"text", text: buildPrompt() });
+  const rid = pendingRid || randomId();
+  pendingRid = rid;
+  const url = cfg.proxyUrl, token = cfg.proxyToken, key = endpointKey();
 
   try {
-    const data = await callProxy(cfg.proxyUrl, cfg.proxyToken, [{ role:"user", content }]);
-    if (data && data._usage) saveUsage(data._usage);
+    let data;
+    try {
+      data = await callProxy(url, token, [{ role:"user", content }], { _rid: rid });
+    } catch (err){
+      // Only a request that never came back lands here (fetch threw, e.g. no signal,
+      // a CORS rejection, or a host that doesn't answer — or the body wasn't JSON).
+      // The attempt stays pending so a retry reuses the id.
+      console.error(err);
+      // fetch() also throws when the browser IS online but the request was rejected
+      // before it got a response — most often the Apps Script deployment's access
+      // isn't set to "Anyone". Name that possibility instead of always blaming signal.
+      const cause = navigator.onLine
+        ? "No signal, or the caption endpoint isn't reachable (check it's deployed with access set to Anyone)."
+        : "No signal.";
+      if (images.length){
+        const kept = queueDraft(rid);
+        if (kept){
+          showError(kept === images.length
+            ? `${cause} Draft saved on this device; it will be waiting next time you open with coverage.`
+            : `${cause} Saved the first ${kept} photo${kept > 1 ? "s" : ""} of this draft (storage limit).`);
+          return;
+        }
+      }
+      showError(`${cause} Tap "Re-read photo" to try again.`);
+      return;
+    }
+
+    pendingRid = null;   // the proxy answered; whatever it said, this attempt is settled
+    if (!data || typeof data !== "object"){ showError("The caption service sent an empty reply. Tap Re-read photo to try again."); return; }
+    if (data._usage) saveUsage(data._usage, key);
     if (data.error){
       if (errType(data.error) === "limit_reached"){
         // The proxy said no more. Make sure the wall shows even if _usage was missing.
-        if (!limitReached()) saveUsage(Object.assign({ limit: 1, used: 1, remaining: 0 }, data._usage || {}));
+        if (!limitReached()) saveUsage(Object.assign({ limit: 1, used: 1, remaining: 0 }, data._usage || {}), key);
         return;
       }
       showError(errText(data.error)); return;
@@ -893,19 +957,8 @@ async function analyze(){
     let out;
     try { out = JSON.parse(extractText(data)); }
     catch { showError("The model answered but not in the expected format. Tap Re-read photo to try again."); return; }
-    fillResults(out);
-  } catch (err){
-    console.error(err);
-    if ((err instanceof TypeError || !navigator.onLine) && images.length){
-      const kept = queueDraft();
-      if (kept){
-        showError(kept === images.length
-          ? "No signal. Draft saved on this device; it will be waiting next time you open with coverage."
-          : `No signal. Saved the first ${kept} photo${kept > 1 ? "s" : ""} of this draft (storage limit). Waiting for coverage.`);
-        return;
-      }
-    }
-    showError('Couldn\'t read the photo. Check your connection and tap "Re-read photo" to try again.');
+    try { fillResults(out); }
+    catch (err){ console.error(err); showError("Couldn't lay out the result. Tap Re-read photo to try again."); }
   } finally {
     btn.disabled = false;
     btn.textContent = images.length ? "Re-read photo" : "Read photo & draft";
@@ -983,7 +1036,9 @@ function signatureTag(){
    tags entered and reports how many were trimmed, so nothing is dropped silently. */
 function capHashtags(rawTags, sigOn){
   const cap = Math.max(0, +cfg.cap || 0);
-  const tokens = rawTags.split(/\s+/).filter(Boolean).map(t => t.startsWith("#") ? t : "#" + t);
+  // Same split as parseTags(): a pasted comma-separated list is still separate tags,
+  // not one token, so the cap actually catches it instead of counting it as 1.
+  const tokens = rawTags.split(/[\s,]+/).filter(Boolean).map(t => t.startsWith("#") ? t : "#" + t);
   if (!cap) return { tags: tokens.join(" "), total: tokens.length + (sigOn ? 1 : 0), dropped: 0 };
   const reserved = sigOn ? 1 : 0;
   const budget = Math.max(0, cap - reserved);
@@ -1013,7 +1068,9 @@ function assemble(){
 
 function build(){
   const { text, hashCount, dropped, handles, place } = assemble();
-  $("preview").innerHTML = esc(text)
+  // Text-node escaping only (& < >): quote entities like &#39; would otherwise be
+  // read as a "#39" hashtag by the highlighter below.
+  $("preview").innerHTML = escText(text)
     .replace(/(@[a-z0-9._]+)/gi, '<span class="m">$1</span>')
     .replace(/(#[a-z0-9_]+)/gi, '<span class="h">$1</span>');
   const hs = $("cHandles");
@@ -1070,10 +1127,13 @@ $("share").addEventListener("click", async () => {
 /* =============================================================================
    OFFLINE DRAFT QUEUE
    ============================================================================= */
-function queueDraft(){
+function queueDraft(rid){
   const photos = images.map(im => ({ b64: im.b64, mediaType: im.mediaType }));
   for (let keep = photos.length; keep >= 1; keep--){
-    try { localStorage.setItem(QUEUE_KEY, JSON.stringify({ when: Date.now(), photos: photos.slice(0, keep) })); return keep; }
+    // The request id rides along only when every photo fits: a partial draft is a
+    // different request and must not collect the full one's cached reply.
+    const saved = { when: Date.now(), photos: photos.slice(0, keep), rid: keep === photos.length ? rid : null };
+    try { localStorage.setItem(QUEUE_KEY, JSON.stringify(saved)); return keep; }
     catch { /* quota, try fewer */ }
   }
   return 0;
@@ -1090,8 +1150,19 @@ function offerQueue(){
 $("queueGo").addEventListener("click", () => {
   const q = readQueue();
   if (!q || !q.photos){ clearQueue(); return; }
-  for (const ph of q.photos.slice(0, MAX_PHOTOS)) images.push({ dataUrl:`data:${ph.mediaType};base64,${ph.b64}`, mediaType: ph.mediaType, b64: ph.b64 });
-  renderThumbs(); clearQueue(); analyze();
+  // Room left after whatever is already loaded, never negative — mirrors intake()'s guard.
+  const room = Math.max(0, MAX_PHOTOS - images.length);
+  for (const ph of q.photos.slice(0, room)) images.push({ dataUrl:`data:${ph.mediaType};base64,${ph.b64}`, mediaType: ph.mediaType, b64: ph.b64 });
+  renderThumbs();
+  $("queueBar").classList.add("hidden");   // hide now; only clearQueue() (delete from storage) once analyze() actually runs
+  // Only the full, unmodified draft carries its request id — reusing it after photos
+  // were dropped or trimmed would fetch a cached reply for a request that no longer matches.
+  pendingRid = room >= q.photos.length && typeof q.rid === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(q.rid) ? q.rid : null;
+  // A draft is worth losing only once it has actually been sent. If Settings isn't ready
+  // or the free tier is out, keep it in storage so a reload doesn't throw it away.
+  if (!isConfigured() || limitReached()){ openSettings(); return; }
+  clearQueue();
+  analyze();
 });
 $("queueDrop").addEventListener("click", clearQueue);
 addEventListener("online", offerQueue);
@@ -1100,9 +1171,10 @@ addEventListener("online", offerQueue);
    limit may have changed. On open, ask the proxy (a _ping never counts) and redraw. */
 async function refreshUsage(){
   if (!isConfigured() || !navigator.onLine) return;
+  const key = endpointKey();
   try {
     const data = await callProxy(cfg.proxyUrl, cfg.proxyToken, null, { _ping: true });
-    if (data && data._usage) saveUsage(data._usage);
+    if (data && data._usage) saveUsage(data._usage, key);
   } catch { /* offline or unreachable: keep what we have */ }
 }
 
