@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HTML Builds</title>
+<meta name="description" content="Single-file HTML tools. Open one, use it, share the link." />
+<meta name="theme-color" content="#0a0a0b" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0a0a0b;--ink-2:#121214;--ink-3:#17171a;
+    --accent:#c1272d;--accent-rgb:193,39,45;--accent-soft:#ef7c80;
+    --text:#e9e9ec;--muted:#96969c;--silver-2:#c7c8cc;
+    --line:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--ink);}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .bleed{position:fixed;top:0;bottom:0;width:38vw;max-width:340px;pointer-events:none;opacity:.4;mix-blend-mode:screen;}
+  .bleed.l{left:0;background:radial-gradient(120% 70% at 0% 50%, rgba(var(--accent-rgb),.55), rgba(var(--accent-rgb),.12) 38%, transparent 64%);}
+  .bleed.r{right:0;background:radial-gradient(120% 70% at 100% 50%, rgba(var(--accent-rgb),.55), rgba(var(--accent-rgb),.12) 38%, transparent 64%);}
+  .wrap{position:relative;max-width:760px;margin:0 auto;padding:48px 16px 60px;}
+  header{text-align:center;margin-bottom:34px;}
+  h1{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;text-transform:uppercase;font-size:40px;letter-spacing:.04em;margin:0;line-height:1;
+     background:linear-gradient(180deg,#f4f4f5,#b9bbc0 55%,#86888e);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+  .rule{display:flex;align-items:center;justify-content:center;gap:14px;margin:14px auto 12px;max-width:230px;}
+  .rule .seg{height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line-strong),transparent);}
+  .rule .seg.red{background:linear-gradient(90deg,transparent,rgba(var(--accent-rgb),.85),transparent);}
+  .sparkle{width:11px;height:11px;fill:var(--accent);flex:none;}
+  .lede{color:var(--muted);font-size:14px;margin:0;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+  a.card{display:block;text-decoration:none;color:inherit;background:linear-gradient(180deg,var(--ink-3),var(--ink-2));border:1px solid var(--line);border-radius:6px;padding:20px 18px;position:relative;overflow:hidden;transition:border-color .15s;}
+  a.card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent 70%);}
+  a.card:hover{border-color:rgba(var(--accent-rgb),.55);}
+  .card h2{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:18px;color:#fff;margin:0 0 6px;}
+  .card p{margin:0;color:var(--muted);font-size:13.5px;}
+  .card .go{display:inline-block;margin-top:14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:13px;color:var(--accent-soft);}
+  .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:44px;}
+  .foot a{color:var(--silver-2);}
+</style>
+</head>
+<body>
+<div class="bleed l"></div><div class="bleed r"></div>
+<div class="wrap">
+  <header>
+    <h1>HTML Builds</h1>
+    <div class="rule"><span class="seg"></span><svg class="sparkle" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z"/></svg><span class="seg red"></span></div>
+    <p class="lede">Single-file tools. Open one, use it, share the link.</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="caption-studio/">
+      <h2>Caption Studio</h2>
+      <p>Photo in, on-brand social caption out. Identifies what is in the shot, drafts the caption in your voice, picks the hashtags, and tells you who to tag.</p>
+      <span class="go">Open →</span>
+    </a>
+  </div>
+
+  <p class="foot">Source on <a href="https://github.com/baxstarcode/html-builds">GitHub</a>. No accounts, no tracking, no secrets in any file.</p>
+</div>
+</body>
+</html>

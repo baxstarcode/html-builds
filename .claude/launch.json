@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "html-builds",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8840", "--bind", "127.0.0.1"],
+      "port": 8840
+    }
+  ]
+}

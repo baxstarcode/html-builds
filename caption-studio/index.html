@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Caption Studio</title>
+<meta name="description" content="Photo in, on-brand social caption out. Identifies what is in the shot, drafts the caption in your voice, picks the hashtags, and tells you who to tag." />
+<meta name="theme-color" content="#0a0a0b" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Captions" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230a0a0b'/%3E%3Cpath d='M32 6l5.2 20.8L58 32l-20.8 5.2L32 58l-5.2-20.8L6 32l20.8-5.2z' fill='%23c1272d'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230a0a0b'/%3E%3Cpath d='M32 6l5.2 20.8L58 32l-20.8 5.2L32 58l-5.2-20.8L6 32l20.8-5.2z' fill='%23c1272d'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,700;1,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ---------------------------------------------------------------------------
+     Caption Studio — commercial edition. Single file: markup, styles, app.
+     The accent color is a setting; everything below derives from --accent.
+     --------------------------------------------------------------------------- */
+  :root{
+    --ink:#0a0a0b;
+    --ink-2:#121214;
+    --ink-3:#17171a;
+    --accent:#c1272d;
+    --accent-bright:#e3262e;
+    --accent-soft:#ef7c80;
+    --accent-rgb:193,39,45;
+    --silver-1:#fafafa;
+    --silver-2:#c7c8cc;
+    --silver-3:#86888e;
+    --text:#e9e9ec;
+    --muted:#96969c;
+    --line:rgba(255,255,255,.08);
+    --line-strong:rgba(255,255,255,.14);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--ink);}
+  html{overscroll-behavior-y:none;}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    color:var(--text);line-height:1.55;
+    padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px);
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;position:relative;
+  }
+  button{font:inherit;}
+  button, .drop{touch-action:manipulation;}
+
+  /* ---------- Ambient layers ---------- */
+  .bleed{position:fixed;top:0;bottom:0;width:38vw;max-width:340px;pointer-events:none;z-index:0;opacity:.45;mix-blend-mode:screen;}
+  .bleed.l{left:0;background:radial-gradient(120% 70% at 0% 50%, rgba(var(--accent-rgb),.55), rgba(var(--accent-rgb),.12) 38%, transparent 64%);}
+  .bleed.r{right:0;background:radial-gradient(120% 70% at 100% 50%, rgba(var(--accent-rgb),.55), rgba(var(--accent-rgb),.12) 38%, transparent 64%);}
+  .depth{position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(140% 80% at 50% -10%, rgba(60,62,70,.30), transparent 55%),
+               linear-gradient(180deg, rgba(0,0,0,.5) 0%, transparent 22%, transparent 78%, rgba(0,0,0,.65) 100%);}
+  .topo{position:fixed;z-index:0;pointer-events:none;opacity:.35;}
+  .topo svg{display:block;}
+  .topo.tl{top:-140px;left:-160px;}
+  .topo.br{bottom:-150px;right:-160px;transform:rotate(180deg);}
+  .topo circle{stroke:var(--accent);}
+  .grain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.04;mix-blend-mode:overlay;}
+
+  .wrap{position:relative;z-index:2;max-width:560px;margin:0 auto;padding:22px 16px 0;}
+
+  /* ---------- Header ---------- */
+  header{text-align:center;margin-bottom:18px;position:relative;}
+  .biz{
+    font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;text-transform:uppercase;
+    font-size:30px;line-height:1.05;letter-spacing:.04em;margin:8px 0 0;
+    background:linear-gradient(180deg,#f4f4f5,#b9bbc0 55%,#86888e);
+    -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 10px 26px rgba(0,0,0,.55));
+  }
+  .rule{display:flex;align-items:center;justify-content:center;gap:14px;margin:12px auto 10px;max-width:230px;}
+  .rule .seg{height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--line-strong),transparent);}
+  .rule .seg.red{background:linear-gradient(90deg,transparent,rgba(var(--accent-rgb),.85),transparent);}
+  .sparkle{display:inline-block;width:11px;height:11px;fill:var(--accent);flex:none;}
+  .product{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+    font-size:19px;letter-spacing:.42em;margin:0 0 0 .42em;
+    background:linear-gradient(180deg,#f4f4f5,#b9bbc0 55%,#86888e);
+    -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  }
+  .lede{color:var(--muted);font-size:13.5px;margin:10px 0 0;}
+  .gear{
+    position:absolute;right:-4px;top:-6px;width:40px;height:40px;border-radius:8px;
+    background:transparent;border:1px solid var(--line-strong);color:var(--silver-2);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .gear svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.7;fill:none;}
+  .gear:active{border-color:var(--accent);}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:linear-gradient(180deg,var(--ink-3),var(--ink-2));
+    border:1px solid var(--line);border-radius:6px;padding:18px 16px;margin-bottom:14px;position:relative;overflow:hidden;
+  }
+  .card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,var(--accent),transparent 70%);opacity:.9;}
+  .step{
+    display:flex;align-items:baseline;gap:10px;font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;text-transform:uppercase;letter-spacing:.16em;font-size:15px;color:#fff;margin:0 0 14px;
+  }
+  .step .n{
+    font-style:italic;font-weight:800;font-size:21px;line-height:1;
+    background:linear-gradient(180deg,#f4f4f5,#9a9ca2 60%,#6f7176);
+    -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+    border-bottom:2px solid var(--accent);padding-bottom:3px;
+  }
+  .step .sparkle{align-self:center;}
+
+  /* ---------- Upload ---------- */
+  .drop{border:1.5px dashed var(--line-strong);border-radius:6px;padding:26px 16px;text-align:center;cursor:pointer;transition:.15s;}
+  .drop:active, .drop.over{border-color:var(--accent);background:rgba(var(--accent-rgb),.06);}
+  .drop .ic{width:34px;height:34px;stroke:var(--accent);stroke-width:1.6;fill:none;}
+  .drop .big{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:18px;color:#fff;margin-top:8px;}
+  .drop .sub{color:var(--muted);font-size:12.5px;margin-top:2px;}
+  #file, #camera, #importFile{display:none;}
+  .snap{
+    width:100%;margin-top:10px;padding:12px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:transparent;border:1px solid rgba(255,255,255,.14);border-radius:10px;color:var(--text);font-size:13.5px;font-weight:600;cursor:pointer;
+  }
+  .snap svg{width:18px;height:18px;stroke:var(--accent);stroke-width:1.6;fill:none;}
+  .snap:active{border-color:var(--accent);background:rgba(var(--accent-rgb),.06);}
+  .thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .thumb{position:relative;width:72px;height:72px;border-radius:4px;overflow:hidden;border:1px solid var(--line-strong);}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb button{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:4px;background:rgba(10,10,11,.85);color:#fff;border:1px solid var(--line-strong);font-size:13px;line-height:1;cursor:pointer;}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:.6em;
+    border:1px solid rgba(255,255,255,.14);border-radius:3px;padding:15px;cursor:pointer;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:.14em;text-transform:uppercase;
+    transition:filter .18s ease, box-shadow .18s ease;color:#fff;background:var(--ink-2);
+  }
+  .btn-primary, .btn-copy{
+    background:linear-gradient(180deg,var(--accent-bright),var(--accent));
+    box-shadow:0 10px 30px rgba(var(--accent-rgb),.35), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .btn-primary:active, .btn-copy:active{filter:brightness(1.08);}
+  .btn-primary:disabled{background:linear-gradient(180deg,#1b1113,#150e10);color:rgba(255,255,255,.35);box-shadow:none;border-color:rgba(var(--accent-rgb),.35);cursor:default;}
+  .btn-copy{margin-top:4px;}
+  .btn-ghost{background:transparent;color:var(--silver-2);font-size:15px;padding:12px;}
+  .btn:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+
+  /* ---------- Toggles / chips ---------- */
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .row:last-child{border-bottom:none;}
+  .row .lab{font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.14em;font-size:12.5px;color:var(--muted);}
+  .row .lab small{display:block;font-family:'Inter',sans-serif;text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted);font-size:11.5px;margin-top:2px;}
+  .switch{position:relative;width:46px;height:26px;flex:0 0 auto;}
+  .switch input{display:none;}
+  .switch span{position:absolute;inset:0;background:#35353a;border-radius:6px;transition:.18s;cursor:pointer;border:1px solid var(--line-strong);}
+  .switch span:before{content:"";position:absolute;width:20px;height:20px;border-radius:4px;background:#6a6f78;top:2px;left:3px;transition:.18s;border:1px solid rgba(255,255,255,.2);}
+  .switch input:checked + span{background:linear-gradient(180deg,var(--accent-bright),var(--accent));border-color:rgba(255,255,255,.14);}
+  .switch input:checked + span:before{transform:translateX(19px);background:#fff;border-color:transparent;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:4px;border:1px solid var(--line);background:var(--ink-2);color:var(--muted);font-size:13px;cursor:pointer;transition:.12s;user-select:none;}
+  .chip.on{background:rgba(var(--accent-rgb),.14);border-color:rgba(var(--accent-rgb),.55);color:#fff;}
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--silver-3);}
+  .chip.on .dot{background:var(--accent-bright);}
+  .chips .empty{font-size:12.5px;color:var(--muted);font-style:italic;}
+
+  /* ---------- Fields ---------- */
+  label.field{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.14em;font-size:12.5px;color:var(--muted);margin:0 0 6px;}
+  label.field small{display:block;font-family:'Inter',sans-serif;text-transform:none;letter-spacing:0;font-weight:400;font-size:11.5px;margin-top:1px;}
+  input.txt, textarea.txt, select.txt{
+    width:100%;background:var(--ink);border:1px solid var(--line-strong);border-radius:4px;color:var(--text);
+    font-family:'Inter',sans-serif;font-size:15px;padding:11px 12px;resize:vertical;
+  }
+  input.txt:focus, textarea.txt:focus, select.txt:focus{outline:none;border-color:rgba(var(--accent-rgb),.6);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.15);}
+  textarea.txt{min-height:62px;line-height:1.45;}
+  textarea.txt.tall{min-height:110px;font-size:14px;}
+  .fld{margin-top:14px;}
+  .seg{display:flex;gap:8px;flex-wrap:wrap;}
+  .seg button{flex:1;min-width:70px;background:var(--ink-2);border:1px solid var(--line);color:var(--muted);border-radius:3px;padding:11px;cursor:pointer;transition:.12s;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:.1em;text-transform:uppercase;}
+  .seg button.on{background:linear-gradient(180deg,var(--accent-bright),var(--accent));color:#fff;border-color:rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}
+
+  /* ---------- Preview ---------- */
+  .preview{white-space:pre-wrap;word-break:break-word;font-size:14.5px;line-height:1.55;background:var(--ink);border:1px solid var(--line-strong);border-radius:4px;padding:14px;min-height:60px;color:var(--text);}
+  .preview .h{color:var(--accent-soft);}
+  .preview .m{color:var(--silver-2);}
+  .count{font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:var(--muted);margin-top:8px;display:flex;justify-content:space-between;}
+  .count .over{color:var(--accent-soft);}
+  .composer{margin-top:12px;border:1px solid var(--line-strong);border-radius:4px;background:var(--ink);padding:12px 13px;}
+  .composer .ctitle{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:12px;color:var(--muted);margin:0 0 9px;}
+  .composer .crow{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);}
+  .composer .crow:last-of-type{border-bottom:none;}
+  .composer .ckey{flex:0 0 82px;font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.1em;font-size:11.5px;color:var(--muted);padding-top:2px;}
+  .composer .cval{flex:1;font-size:13.5px;line-height:1.5;color:var(--silver-2);word-break:break-word;}
+  .composer .cval.none{color:var(--muted);font-style:italic;}
+  .composer .chint{font-size:11.5px;color:var(--muted);line-height:1.5;margin:9px 0 0;}
+  .note{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px;}
+  .note b{color:var(--silver-2);font-weight:600;}
+  .note a, .foot a, .panel a{color:var(--silver-2);}
+  .hidden{display:none !important;}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:7px;}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .err{background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.4);color:#f2b6b8;border-radius:4px;padding:11px 12px;font-size:13px;margin-top:10px;}
+
+  /* ---------- Free-tier meter + wall ---------- */
+  .meter{margin-top:10px;text-align:center;}
+  .meter .mtxt{font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:var(--muted);}
+  .meter .mbar{height:3px;border-radius:2px;background:var(--line-strong);margin:6px auto 0;max-width:220px;overflow:hidden;}
+  .meter .mbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-bright));transition:width .3s;}
+  .wall{text-align:center;}
+  .wall .wtitle{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;text-transform:uppercase;font-size:24px;letter-spacing:.04em;color:#fff;margin:4px 0 8px;}
+  .wall p{color:var(--silver-2);font-size:14px;line-height:1.55;margin:0 0 16px;}
+  .wall a.btn{text-decoration:none;}
+  .wall .wsub{font-size:12px;color:var(--muted);margin:12px 0 0;}
+  .ok{background:rgba(70,160,90,.10);border:1px solid rgba(90,190,110,.4);color:#bfe6c6;border-radius:4px;padding:11px 12px;font-size:13px;margin-top:10px;}
+
+  /* ---------- Settings panel ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .scrim.open{opacity:1;pointer-events:auto;}
+  .panel{
+    position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);z-index:21;
+    background:linear-gradient(180deg,var(--ink-3),var(--ink-2));border-left:1px solid var(--line-strong);
+    transform:translateX(100%);transition:transform .22s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 30px);
+  }
+  .panel.open{transform:translateX(0);}
+  .panel h2{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.16em;font-size:17px;color:#fff;margin:0;display:flex;align-items:center;justify-content:space-between;}
+  .panel h2 button{background:transparent;border:1px solid var(--line-strong);color:var(--silver-2);border-radius:6px;width:36px;height:36px;font-size:18px;cursor:pointer;}
+  .panel h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:13px;color:var(--accent-soft);margin:24px 0 4px;}
+  .panel p.help{font-size:12.5px;color:var(--muted);line-height:1.5;margin:0 0 6px;}
+  .panel ol{font-size:12.5px;color:var(--muted);line-height:1.55;padding-left:18px;margin:6px 0;}
+  .panel code{font-size:11.5px;background:var(--ink);border:1px solid var(--line);border-radius:3px;padding:1px 5px;color:var(--silver-2);}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .swatch{display:flex;align-items:center;gap:10px;}
+  .swatch input[type=color]{width:46px;height:38px;border:1px solid var(--line-strong);border-radius:4px;background:var(--ink);padding:2px;cursor:pointer;}
+  .welcome{background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.4);border-radius:4px;padding:12px 13px;font-size:13px;line-height:1.5;margin-top:14px;color:var(--text);}
+  .panel .actions{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap;}
+  .panel .actions .btn{flex:1;min-width:120px;}
+
+  /* ---------- Footer ---------- */
+  .foot{position:relative;z-index:2;border-top:1px solid var(--line);margin-top:28px;padding:26px 18px 10px;text-align:center;}
+  .foot .fbrand{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.16em;font-size:15px;background:linear-gradient(180deg,#e9e9ec,#a7a8ad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;}
+  .foot .meta{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.26em;font-size:11.5px;color:var(--muted);margin-top:8px;}
+  .foot a.site{display:inline-block;margin-top:14px;color:#fff;text-decoration:none;font-family:'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:lowercase;font-size:16px;border-bottom:1px solid rgba(var(--accent-rgb),.6);padding-bottom:2px;font-weight:600;}
+  .foot .credit{font-size:11px;color:var(--silver-3);margin-top:18px;}
+
+  @media (prefers-reduced-motion:reduce){.spin{animation:none}.panel,.scrim{transition:none}}
+  @media (max-width:420px){.bleed{width:46vw;opacity:.35;}.two{grid-template-columns:1fr;}}
+  /* iOS Safari zooms the page when a focused field is under 16px. Phones get 16px. */
+  @media (max-width:600px){input.txt,textarea.txt,select.txt{font-size:16px;}}
+</style>
+</head>
+<body>
+
+  <div class="bleed l"></div>
+  <div class="bleed r"></div>
+  <div class="depth"></div>
+  <div class="topo tl" aria-hidden="true">
+    <svg width="460" height="460" viewBox="0 0 460 460">
+      <defs>
+        <filter id="wob" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="7" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="34"/>
+        </filter>
+      </defs>
+      <g filter="url(#wob)" fill="none" stroke-width="1.1" opacity="0.5">
+        <circle cx="230" cy="230" r="40"/><circle cx="230" cy="230" r="78"/><circle cx="230" cy="230" r="116"/><circle cx="230" cy="230" r="154"/><circle cx="230" cy="230" r="192"/>
+      </g>
+    </svg>
+  </div>
+  <div class="topo br" aria-hidden="true">
+    <svg width="500" height="500" viewBox="0 0 500 500">
+      <g filter="url(#wob)" fill="none" stroke-width="1.1" opacity="0.5">
+        <circle cx="250" cy="250" r="46"/><circle cx="250" cy="250" r="88"/><circle cx="250" cy="250" r="130"/><circle cx="250" cy="250" r="172"/><circle cx="250" cy="250" r="214"/>
+      </g>
+    </svg>
+  </div>
+  <div class="grain" aria-hidden="true">
+    <svg width="100%" height="100%">
+      <filter id="gr"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter>
+      <rect width="100%" height="100%" filter="url(#gr)"/>
+    </svg>
+  </div>
+
+<div class="wrap">
+
+  <header>
+    <button class="gear" id="openSettings" type="button" aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+    <p class="biz" id="hBiz">Your Business</p>
+    <div class="rule"><span class="seg"></span><svg class="sparkle" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z"/></svg><span class="seg red"></span></div>
+    <p class="product">Caption&nbsp;Studio</p>
+    <p class="lede">Photo in. On-brand caption out. Copy it, post it.</p>
+  </header>
+
+  <!-- STEP 1: PHOTOS -->
+  <div class="card">
+    <p class="step"><span class="n">01</span> Add the shot</p>
+    <div class="drop" id="drop" role="button" tabindex="0">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.2"/><path d="M7 5l1.4-2h7.2L17 5"/></svg>
+      <div class="big">Tap to add photos</div>
+      <div class="sub">Camera roll, or drag and drop &middot; up to 6</div>
+    </div>
+    <input type="file" id="file" accept="image/*" multiple />
+    <button class="snap" id="snap" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.2"/><path d="M7 5l1.4-2h7.2L17 5"/></svg>
+      Take a photo now
+    </button>
+    <input type="file" id="camera" accept="image/*" capture="environment" />
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+  <div class="card hidden" id="queueBar">
+    <p class="step"><span class="n">!</span> Saved draft</p>
+    <div class="sub" id="queueInfo" style="color:var(--muted);font-size:12.5px;"></div>
+    <button class="btn btn-primary" id="queueGo">Finish this draft</button>
+    <button class="btn btn-copy" id="queueDrop">Discard it</button>
+  </div>
+
+  <button class="btn btn-primary" id="analyze" disabled>Read photo &amp; draft</button>
+  <div class="meter hidden" id="meter"><div class="mtxt" id="meterTxt"></div><div class="mbar"><i id="meterBar"></i></div></div>
+  <div id="errBox"></div>
+
+  <!-- Free tier used up. Message, button text, and link come from the proxy. -->
+  <div class="card wall hidden" id="wall">
+    <p class="wtitle" id="wallTitle">That's the free ten</p>
+    <p id="wallMsg"></p>
+    <a class="btn btn-primary" id="wallLink" href="https://www.bradybaxter.com" target="_blank" rel="noopener">Contact Brady and let's build your own tool</a>
+    <p class="wsub">Already have a token? Paste it under Settings → Caption endpoint.</p>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden">
+
+    <div class="card" style="margin-top:14px">
+      <p class="step"><span class="n">02</span> The line</p>
+      <textarea class="txt" id="caption" placeholder="Caption..."></textarea>
+      <div class="row" id="sigRow" style="margin-top:6px">
+        <div class="lab">Signature tag <small id="sigHint"></small></div>
+        <label class="switch"><input type="checkbox" id="sig" /><span></span></label>
+      </div>
+      <p class="note hidden" id="notes"></p>
+    </div>
+
+    <div class="card">
+      <p class="step"><span class="n">03</span> Confirm mentions</p>
+      <p class="note" style="margin-top:-4px;margin-bottom:12px">Tap to toggle. Only confirmed accounts go on the tag list, so a wrong account never gets tagged.</p>
+      <div class="chips" id="chips"></div>
+      <div class="fld">
+        <label class="field">Location</label>
+        <input class="txt" id="place" placeholder="Where was this taken?" />
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="step"><span class="n">04</span> Tags &amp; timing</p>
+      <label class="field" id="hashLabel">Hashtags</label>
+      <input class="txt" id="hashtags" placeholder="#yourtag #another" />
+      <div class="fld" id="timeWrap">
+        <label class="field">Post at</label>
+        <div class="seg" id="timeSeg"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="step"><svg class="sparkle" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4z"/></svg> Ready to post</p>
+      <div class="preview" id="preview"></div>
+      <div class="count"><span id="tagCount"></span><span id="charCount"></span></div>
+      <button class="btn btn-copy" id="copy">Copy caption</button>
+      <button class="btn btn-copy" id="share">Share photo + caption</button>
+
+      <div class="composer">
+        <p class="ctitle">Then in Instagram, before you share</p>
+        <div class="crow"><div class="ckey">Tag people</div><div class="cval" id="cHandles"></div></div>
+        <div class="crow"><div class="ckey">Location</div><div class="cval" id="cPlace"></div></div>
+        <p class="chint">Tagging in Instagram's own field notifies the account and shows on the photo. An @ typed into the caption does neither, and doing both tags everyone twice. Facebook has the same two fields.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="foot">
+  <div class="fbrand" id="fBiz">Your Business</div>
+  <div class="meta" id="fMeta"></div>
+  <a class="site" id="fSite" href="#" target="_blank" rel="noopener"></a>
+  <div class="credit">Caption Studio</div>
+</footer>
+
+<!-- SETTINGS -->
+<div class="scrim" id="scrim"></div>
+<aside class="panel" id="panel" aria-label="Settings">
+  <h2>Settings <button type="button" id="closeSettings" aria-label="Close">&times;</button></h2>
+  <div class="welcome hidden" id="welcome">
+    <b>Welcome.</b> Fill in your business below and press Save. The built-in endpoint gives
+    every device a free trial; after that, the tool tells you how to get your own.
+  </div>
+
+  <h3>Your business</h3>
+  <div class="fld"><label class="field">Business name</label><input class="txt" id="sBiz" placeholder="Northshore Bakery" /></div>
+  <div class="two">
+    <div class="fld"><label class="field">Website</label><input class="txt" id="sSite" placeholder="northshorebakery.com" /></div>
+    <div class="fld"><label class="field">Location</label><input class="txt" id="sLoc" placeholder="Duluth, Minnesota" /></div>
+  </div>
+  <div class="fld"><label class="field">What you do <small>One line. The model uses it to understand your photos.</small></label><input class="txt" id="sIndustry" placeholder="Sourdough bakery and coffee bar" /></div>
+  <div class="fld"><label class="field">Voice <small>How captions should sound.</small></label><textarea class="txt" id="sVoice" placeholder="Warm, a little playful, never salesy. Short sentences. Talk like a regular, not a brand."></textarea></div>
+  <div class="fld"><label class="field">Never say <small>Optional. Words, claims, or topics to keep out of captions.</small></label><input class="txt" id="sAvoid" placeholder="prices, 'best in town', discounts" /></div>
+
+  <h3>Hashtags</h3>
+  <div class="two">
+    <div class="fld"><label class="field">Max hashtags per post</label><input class="txt" id="sCap" type="number" min="0" max="30" value="5" /></div>
+    <div class="fld"><label class="field">Signature tag <small>Optional. One tag, toggled per post.</small></label><input class="txt" id="sSig" placeholder="#northshorebakes" /></div>
+  </div>
+  <div class="fld"><label class="field">Always-on hashtags <small>Optional. Added to every post, count toward the max.</small></label><input class="txt" id="sAlways" placeholder="#duluth #shoplocal" /></div>
+
+  <h3>Accounts to tag</h3>
+  <p class="help">One per line: <code>Label | @handle @handle2 | what to look for in the photo</code>.
+    Leave the third part empty for a manual-only toggle.</p>
+  <textarea class="txt tall" id="sMentions" placeholder="Vexus boat | @therealvexusboats | a Vexus bass boat or the word Vexus on a boat
+Mercury motor | @mercurymarine | an outboard motor
+Local chamber | @cityofduluth |"></textarea>
+
+  <h3>Posting</h3>
+  <div class="fld"><label class="field">Post-time options <small>Comma separated. Shown as a reminder, leave empty to hide.</small></label><input class="txt" id="sTimes" placeholder="8 AM, Noon, 6 PM" /></div>
+  <div class="fld swatch"><label class="field" style="margin:0">Accent color</label><input type="color" id="sAccent" value="#c1272d" /></div>
+
+  <h3>Caption endpoint</h3>
+  <p class="help" id="tierHelp"></p>
+  <p class="help">The tool never holds an AI key. It posts photos to a small proxy, which adds the key and calls the model.
+    To run your own, setup takes about ten minutes with the included <code>Code.gs</code> script.</p>
+  <ol>
+    <li>Open <a href="https://script.google.com" target="_blank" rel="noopener">script.google.com</a>, new project, paste <code>proxy/Code.gs</code>.</li>
+    <li>Project Settings &rarr; Script Properties: add <code>ANTHROPIC_API_KEY</code> and <code>PROXY_TOKEN</code> (any long random string).</li>
+    <li>Deploy &rarr; New deployment &rarr; Web app, execute as <b>Me</b>, access <b>Anyone</b>. Copy the <code>/exec</code> URL.</li>
+    <li>Paste the URL and the same token below, then Test.</li>
+  </ol>
+  <div class="fld"><label class="field">Proxy URL</label><input class="txt" id="sProxy" type="url" placeholder="https://script.google.com/macros/s/.../exec" /></div>
+  <div class="fld"><label class="field">Proxy token</label><input class="txt" id="sToken" placeholder="must match PROXY_TOKEN in Script Properties" /></div>
+  <div id="testBox"></div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="saveSettings" type="button">Save</button>
+    <button class="btn btn-ghost" id="testProxy" type="button">Test endpoint</button>
+  </div>
+  <div class="actions" style="margin-top:8px">
+    <button class="btn btn-ghost" id="exportCfg" type="button">Export setup</button>
+    <button class="btn btn-ghost" id="importCfg" type="button">Import setup</button>
+    <button class="btn btn-ghost" id="resetCfg" type="button">Reset</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json,.json" />
+  <p class="help" style="margin-top:16px">Settings live only in this browser. Export to move them to another phone or hand a
+    finished setup to a client. The export includes the proxy token, so share it like a password.</p>
+  <p class="help">Device id: <code id="deviceId"></code></p>
+</aside>
+
+<script>
+/* =============================================================================
+   CONFIG
+   Everything that used to be hard-coded for one business is a setting here.
+   Stored in localStorage; export/import moves it between devices or clients.
+   ============================================================================= */
+const CFG_KEY = "caption-studio-config-v1";
+const QUEUE_KEY = "caption-studio-queued-draft";
+const USAGE_KEY = "caption-studio-usage";
+const CLIENT_KEY = "caption-studio-device";
+const MAX_PHOTOS = 6;
+
+/* FREE TIER. Deploy proxy/Code.gs once, then put its /exec URL and PROXY_TOKEN here.
+   Every visitor then gets the free trial with zero setup. The token is a soft gate
+   by design (it's readable here); the proxy's fixed model, per-device limit, and
+   daily ceiling are what protect the bill. Leave both empty to require each user
+   to bring their own endpoint. */
+const FREE_PROXY_URL = "";
+const FREE_PROXY_TOKEN = "";
+
+/* Shown if the free tier runs out before the proxy has told us its own wording. */
+const WALL_DEFAULT = {
+  message: "That's your free captions. Want this built for your business, with your voice, your tags, and no limit?",
+  cta: "Contact Brady and let's build your own tool",
+  url: "https://www.bradybaxter.com"
+};
+
+const DEFAULTS = {
+  business:"", site:"", location:"", industry:"", voice:"", avoid:"",
+  cap:5, signature:"", always:"", mentionsText:"", times:"", accent:"#c1272d",
+  proxyUrl: FREE_PROXY_URL, proxyToken: FREE_PROXY_TOKEN
+};
+
+let cfg = loadCfg();
+let usage = loadUsage();
+
+function loadCfg(){
+  try {
+    const raw = JSON.parse(localStorage.getItem(CFG_KEY) || "null");
+    return Object.assign({}, DEFAULTS, raw || {});
+  } catch { return Object.assign({}, DEFAULTS); }
+}
+function saveCfg(){
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); return true; }
+  catch { showError("Couldn't save settings in this browser (storage blocked or full)."); return false; }
+}
+function hasSavedCfg(){ try { return !!localStorage.getItem(CFG_KEY); } catch { return false; } }
+function isConfigured(){ return !!cfg.proxyUrl; }
+function onFreeTier(){ return !!FREE_PROXY_URL && cfg.proxyUrl === FREE_PROXY_URL && cfg.proxyToken === FREE_PROXY_TOKEN; }
+
+/* Device id: random, generated once, kept in this browser. The proxy counts free
+   captions against it. It identifies the browser, not the person. */
+function clientId(){
+  try {
+    let id = localStorage.getItem(CLIENT_KEY);
+    if (id && /^[A-Za-z0-9_-]{8,64}$/.test(id)) return id;
+    id = (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join(""))
+      .replace(/[^A-Za-z0-9_-]/g, "");
+    localStorage.setItem(CLIENT_KEY, id);
+    return id;
+  } catch {
+    // Storage blocked: a per-session id still lets the proxy count, just not across reloads.
+    if (!clientId._tmp) clientId._tmp = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
+    return clientId._tmp;
+  }
+}
+
+/* Usage as last reported by the proxy: {tier, used, limit, remaining, upgrade*}.
+   Kept per endpoint so switching to a paid token clears a stale free-tier wall. */
+function loadUsage(){
+  try {
+    const u = JSON.parse(localStorage.getItem(USAGE_KEY) || "null");
+    return u && typeof u === "object" ? u : null;
+  } catch { return null; }
+}
+function saveUsage(u){
+  usage = u && typeof u === "object" ? Object.assign({}, u, { endpoint: cfg.proxyUrl + "|" + cfg.proxyToken }) : null;
+  try { usage ? localStorage.setItem(USAGE_KEY, JSON.stringify(usage)) : localStorage.removeItem(USAGE_KEY); } catch {}
+  renderUsage();
+}
+function limitReached(){
+  return !!(usage && usage.endpoint === cfg.proxyUrl + "|" + cfg.proxyToken && usage.limit && usage.remaining !== null && usage.remaining <= 0);
+}
+function renderUsage(){
+  const current = usage && usage.endpoint === cfg.proxyUrl + "|" + cfg.proxyToken ? usage : null;
+  const meter = $("meter");
+  if (current && current.limit){
+    const used = Math.min(current.used || 0, current.limit);
+    $("meterTxt").textContent = `${used} of ${current.limit} free captions used`;
+    $("meterBar").style.width = Math.round(100 * used / current.limit) + "%";
+    meter.classList.remove("hidden");
+  } else {
+    meter.classList.add("hidden");
+  }
+  const wall = limitReached();
+  $("wall").classList.toggle("hidden", !wall);
+  $("analyze").classList.toggle("hidden", wall);
+  if (wall){
+    const words = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
+    const n = current.limit;
+    $("wallTitle").textContent = "That's the free " + (words[n] || n);
+    $("wallMsg").textContent = (current && current.upgradeMessage) || WALL_DEFAULT.message;
+    const a = $("wallLink");
+    a.textContent = (current && current.upgradeCta) || WALL_DEFAULT.cta;
+    const url = (current && current.upgradeUrl) || WALL_DEFAULT.url;
+    a.href = /^https?:\/\//i.test(url) ? url : WALL_DEFAULT.url;
+  }
+}
+
+/* Mentions: "Label | @a @b | cue". Cue empty => manual toggle only (not sent to the model). */
+function parseMentions(text){
+  return (text || "").split("\n").map(l => l.trim()).filter(Boolean).map((line, i) => {
+    const parts = line.split("|").map(s => s.trim());
+    const label = parts[0] || ("Account " + (i + 1));
+    const handles = (parts[1] || "").split(/\s+/).filter(Boolean).map(h => h.startsWith("@") ? h : "@" + h);
+    const cue = parts[2] || "";
+    return { key: "m" + i, label, handles, cue };
+  }).filter(m => m.handles.length);
+}
+function parseTimes(text){ return (text || "").split(",").map(s => s.trim()).filter(Boolean); }
+function parseTags(text){
+  return (text || "").split(/[\s,]+/).filter(Boolean).map(t => t.startsWith("#") ? t : "#" + t);
+}
+function siteHref(site){
+  if (!site) return "";
+  return /^https?:\/\//i.test(site) ? site : "https://" + site;
+}
+
+/* ---------- Accent color -> derived tokens ---------- */
+function hexToRgb(hex){
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "");
+  return m ? [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)] : [193,39,45];
+}
+function mix(rgb, target, t){ return rgb.map((c, i) => Math.round(c + (target[i] - c) * t)); }
+function rgbStr(rgb){ return "rgb(" + rgb.join(",") + ")"; }
+function applyAccent(hex){
+  const rgb = hexToRgb(hex);
+  const r = document.documentElement.style;
+  r.setProperty("--accent", rgbStr(rgb));
+  r.setProperty("--accent-bright", rgbStr(mix(rgb, [255,255,255], .12)));
+  r.setProperty("--accent-soft", rgbStr(mix(rgb, [255,255,255], .45)));
+  r.setProperty("--accent-rgb", rgb.join(","));
+}
+
+/* ---------- Apply config to the page ---------- */
+let MENTIONS = [];
+let TIMES = [];
+let postTime = "";
+
+function applyCfg(){
+  MENTIONS = parseMentions(cfg.mentionsText);
+  TIMES = parseTimes(cfg.times);
+  postTime = TIMES[0] || "";
+  applyAccent(cfg.accent);
+
+  const name = cfg.business || "Your Business";
+  document.title = cfg.business ? ("Caption Studio — " + cfg.business) : "Caption Studio";
+  $("hBiz").textContent = name;
+  $("fBiz").textContent = name;
+  $("fMeta").textContent = [cfg.location, cfg.industry].filter(Boolean).join("  •  ");
+  const site = $("fSite");
+  site.textContent = cfg.site || "";
+  site.href = siteHref(cfg.site) || "#";
+  site.classList.toggle("hidden", !cfg.site);
+
+  const sig = cfg.signature ? (cfg.signature.startsWith("#") ? cfg.signature : "#" + cfg.signature) : "";
+  $("sigRow").classList.toggle("hidden", !sig);
+  $("sigHint").textContent = sig ? ("Adds " + sig + " above the business name") : "";
+
+  const always = parseTags(cfg.always);
+  const cap = Math.max(0, +cfg.cap || 0);
+  $("hashLabel").textContent = cap
+    ? `Hashtags — ${cap} max total` + (always.length || sig ? " (signature and always-on tags count)" : "")
+    : "Hashtags";
+
+  $("timeWrap").classList.toggle("hidden", !TIMES.length);
+  $("timeSeg").innerHTML = TIMES.map((t, i) => `<button type="button" data-t="${esc(t)}" class="${i === 0 ? "on" : ""}">${esc(t)}</button>`).join("");
+  $("timeSeg").querySelectorAll("button").forEach(b => b.onclick = () => {
+    $("timeSeg").querySelectorAll("button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on"); postTime = b.dataset.t; build();
+  });
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ---------- Settings panel ---------- */
+const FIELDS = {
+  business:"sBiz", site:"sSite", location:"sLoc", industry:"sIndustry", voice:"sVoice", avoid:"sAvoid",
+  cap:"sCap", signature:"sSig", always:"sAlways", mentionsText:"sMentions", times:"sTimes",
+  accent:"sAccent", proxyUrl:"sProxy", proxyToken:"sToken"
+};
+function fillSettings(){
+  for (const k in FIELDS) $(FIELDS[k]).value = cfg[k] ?? "";
+  $("welcome").classList.toggle("hidden", hasSavedCfg());
+  $("testBox").innerHTML = "";
+  $("deviceId").textContent = clientId();
+  const th = $("tierHelp");
+  const u = usage && usage.endpoint === cfg.proxyUrl + "|" + cfg.proxyToken ? usage : null;
+  if (u && u.limit){
+    th.textContent = `This endpoint has a free limit: ${Math.min(u.used || 0, u.limit)} of ${u.limit} captions used on this device. Paste a token without a limit below to remove it.`;
+  } else if (u && u.tier === "unlimited"){
+    th.textContent = "This token has no caption limit.";
+  } else if (onFreeTier()){
+    th.textContent = "You're on the built-in free tier. Each device gets a set number of captions; paste your own endpoint or token below to remove the limit.";
+  } else if (FREE_PROXY_URL && !cfg.proxyUrl){
+    th.textContent = "Leave these empty to use the built-in free tier.";
+  } else {
+    th.textContent = "";
+  }
+}
+function readSettings(){
+  const next = {};
+  for (const k in FIELDS) next[k] = $(FIELDS[k]).value;
+  next.cap = Math.max(0, Math.min(30, parseInt(next.cap, 10) || 0));
+  next.proxyUrl = next.proxyUrl.trim();
+  next.proxyToken = next.proxyToken.trim();
+  // Both empty means "use the built-in free tier" when one is baked in.
+  if (!next.proxyUrl && !next.proxyToken){ next.proxyUrl = FREE_PROXY_URL; next.proxyToken = FREE_PROXY_TOKEN; }
+  for (const k of ["business","site","location","industry","signature","always","times"]) next[k] = next[k].trim();
+  return next;
+}
+function openSettings(){ fillSettings(); $("panel").classList.add("open"); $("scrim").classList.add("open"); }
+function closeSettings(){ $("panel").classList.remove("open"); $("scrim").classList.remove("open"); }
+$("openSettings").addEventListener("click", openSettings);
+$("closeSettings").addEventListener("click", closeSettings);
+$("scrim").addEventListener("click", closeSettings);
+$("sAccent").addEventListener("input", e => applyAccent(e.target.value));
+
+$("saveSettings").addEventListener("click", () => {
+  const next = readSettings();
+  // https only, except a local bench server.
+  if (next.proxyUrl && !/^https:\/\/\S+$/i.test(next.proxyUrl) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(next.proxyUrl)){
+    testMsg("The proxy URL needs to start with https://", true); return;
+  }
+  cfg = Object.assign({}, DEFAULTS, next);
+  if (!saveCfg()) return;
+  applyCfg();
+  renderUsage();
+  if (!$("results").classList.contains("hidden")){ renderChips(); build(); }
+  closeSettings();
+  $("errBox").innerHTML = "";
+  if (!isConfigured()) showError("Add a proxy URL under Settings → Caption endpoint before reading a photo.");
+});
+
+function testMsg(msg, bad){
+  const box = $("testBox"); box.innerHTML = "";
+  const d = document.createElement("div"); d.className = bad ? "err" : "ok"; d.textContent = msg; box.appendChild(d);
+}
+$("testProxy").addEventListener("click", async () => {
+  const s = readSettings();
+  if (!s.proxyUrl){ testMsg("Paste the proxy URL first.", true); return; }
+  testMsg("Testing…");
+  try {
+    // _ping: the proxy answers with a fixed tiny request and does not count it.
+    const data = await callProxy(s.proxyUrl, s.proxyToken, null, { _ping: true });
+    if (data.error){ testMsg("Endpoint answered with an error: " + errText(data.error), true); return; }
+    const text = extractText(data);
+    const u = data._usage;
+    const tier = u && u.limit ? ` Free tier: ${Math.min(u.used || 0, u.limit)} of ${u.limit} captions used on this device.` : (u && u.tier === "unlimited" ? " No caption limit on this token." : "");
+    testMsg("Connected. The model answered: " + (text || "(empty reply)") + "." + tier);
+  } catch (e) {
+    testMsg("Couldn't reach the endpoint. Check the URL, that the deployment is set to Anyone, and your connection.", true);
+  }
+});
+
+$("exportCfg").addEventListener("click", () => {
+  const s = readSettings();
+  const blob = new Blob([JSON.stringify(s, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "caption-studio-" + (s.business || "setup").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+$("importCfg").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try {
+    const obj = JSON.parse(await f.text());
+    if (!obj || typeof obj !== "object") throw new Error("bad");
+    const merged = Object.assign({}, DEFAULTS);
+    for (const k in DEFAULTS) if (k in obj) merged[k] = typeof DEFAULTS[k] === "number" ? (+obj[k] || 0) : String(obj[k] ?? "");
+    cfg = merged;
+    fillSettings(); applyAccent(cfg.accent);
+    testMsg("Setup loaded. Press Save to keep it.");
+  } catch { testMsg("That file isn't a Caption Studio setup export.", true); }
+});
+$("resetCfg").addEventListener("click", () => {
+  if (!confirm("Clear every setting on this device?")) return;
+  cfg = Object.assign({}, DEFAULTS);
+  try { localStorage.removeItem(CFG_KEY); } catch {}
+  fillSettings(); applyCfg(); renderUsage();
+});
+
+/* =============================================================================
+   PHOTOS
+   ============================================================================= */
+let images = [];          // {dataUrl, mediaType, b64, file?}
+let mentionState = {};
+let lastResult = null;
+
+function $(id){ return document.getElementById(id); }
+
+function showError(msg){
+  const box = $("errBox"); box.innerHTML = "";
+  const d = document.createElement("div"); d.className = "err"; d.textContent = msg; box.appendChild(d);
+}
+
+$("drop").addEventListener("click", () => $("file").click());
+$("drop").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); $("file").click(); } });
+$("snap").addEventListener("click", () => $("camera").click());
+["dragenter","dragover"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.add("over"); }));
+["dragleave","drop"].forEach(ev => $("drop").addEventListener(ev, e => { e.preventDefault(); $("drop").classList.remove("over"); }));
+$("drop").addEventListener("drop", e => { if (e.dataTransfer && e.dataTransfer.files.length) intake(e.dataTransfer.files); });
+
+async function intake(fileList){
+  const files = Array.from(fileList).filter(f => !f.type || f.type.startsWith("image/")).slice(0, MAX_PHOTOS - images.length);
+  if (!files.length && images.length >= MAX_PHOTOS){ showError(`Up to ${MAX_PHOTOS} photos per draft.`); return; }
+  for (const f of files){
+    try {
+      const img = await downscale(f);
+      img.file = f;            // original rides along for the share sheet
+      images.push(img);
+    } catch (err){
+      console.error(err);
+      showError("Couldn't read that image. Try a JPG or PNG straight from your camera roll.");
+    }
+  }
+  renderThumbs();
+}
+$("file").addEventListener("change", async e => { await intake(e.target.files); $("file").value = ""; });
+$("camera").addEventListener("change", async e => { await intake(e.target.files); $("camera").value = ""; });
+
+function downscale(file){
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const max = 1280;
+        let { width:w, height:h } = im;
+        if (w > max || h > max){ const r = Math.min(max / w, max / h); w = Math.round(w * r); h = Math.round(h * r); }
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(im, 0, 0, w, h);
+        const dataUrl = c.toDataURL("image/jpeg", 0.85);
+        res({ dataUrl, mediaType:"image/jpeg", b64: dataUrl.split(",")[1] });
+      };
+      im.onerror = () => rej(new Error("decode failed"));
+      im.src = reader.result;
+    };
+    reader.onerror = () => rej(new Error("read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderThumbs(){
+  $("thumbs").innerHTML = images.map((im, i) =>
+    `<div class="thumb"><img src="${im.dataUrl}" alt=""><button type="button" data-i="${i}" aria-label="Remove photo">×</button></div>`
+  ).join("");
+  $("thumbs").querySelectorAll("button").forEach(b => b.onclick = () => { images.splice(+b.dataset.i, 1); renderThumbs(); });
+  $("analyze").disabled = images.length === 0;
+}
+
+/* =============================================================================
+   ANALYZE
+   ============================================================================= */
+function buildPrompt(){
+  const who = [cfg.business, cfg.industry, cfg.location ? "in " + cfg.location : ""].filter(Boolean).join(", ");
+  const detectable = MENTIONS.filter(m => m.cue);
+  const cap = Math.max(0, +cfg.cap || 0);
+  const mentionLines = detectable.map(m => `  "${m.key}": true only if ${m.cue}`).join("\n");
+  const mentionShape = detectable.map(m => `"${m.key}":false`).join(",");
+  const rules = [
+    "ONE to TWO short sentences about what is happening in the photo, written for this business's social feed.",
+    cfg.voice ? "Voice: " + cfg.voice : "Voice: warm, confident, plain-spoken.",
+    "Use an exclamation point only when it truly earns it and never on two sentences in a row.",
+    "No hashtags. No @handles. No emoji. No prices.",
+    cfg.avoid ? "Never mention: " + cfg.avoid + "." : ""
+  ].filter(Boolean).join(" ");
+
+  return `You are the social media caption assistant for ${who || "a small business"}. Look closely at the photo(s) and return ONLY a JSON object, no preamble, no markdown.
+
+Detect carefully and conservatively (true only if clearly visible):
+- subjects: array of short strings naming the main subjects (products, activities, animals, food, scenery, number of people)
+- mentions: object of booleans:
+${mentionLines || '  (none)'}
+- locationGuess: best guess of the specific place or venue name, or null
+- captionDraft: ${rules}
+- hashtags: array of up to ${Math.max(1, cap || 5)} lowercase hashtags relevant to this photo and this business, most specific first, no spaces, no duplicates
+- notes: anything you're unsure about for human review, or ""
+
+Return exactly: {"subjects":[],"mentions":{${mentionShape}},"locationGuess":null,"captionDraft":"","hashtags":[],"notes":""}`;
+}
+
+async function callProxy(url, token, messages, extra){
+  const body = Object.assign({ _token: token, _client: clientId() }, extra || {});
+  if (messages) body.messages = messages;
+  const r = await fetch(url, {
+    method:"POST",
+    // text/plain is a CORS-simple content type: no preflight, which Apps Script web apps refuse.
+    headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+function errText(err){ return typeof err === "string" ? err : (err && err.message) || "Proxy error"; }
+function errType(err){ return err && typeof err === "object" ? String(err.type || "") : ""; }
+function extractText(data){
+  return (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").replace(/```json|```/g, "").trim();
+}
+
+$("analyze").addEventListener("click", analyze);
+
+async function analyze(){
+  $("errBox").innerHTML = "";
+  if (!isConfigured()){ openSettings(); showError("Add an endpoint under Settings → Caption endpoint first."); return; }
+  if (limitReached()){ renderUsage(); return; }
+  const btn = $("analyze");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Reading the photo...';
+
+  const content = images.map(im => ({ type:"image", source:{ type:"base64", media_type:im.mediaType, data:im.b64 } }));
+  content.push({ type:"text", text: buildPrompt() });
+
+  try {
+    const data = await callProxy(cfg.proxyUrl, cfg.proxyToken, [{ role:"user", content }]);
+    if (data && data._usage) saveUsage(data._usage);
+    if (data.error){
+      if (errType(data.error) === "limit_reached"){
+        // The proxy said no more. Make sure the wall shows even if _usage was missing.
+        if (!limitReached()) saveUsage(Object.assign({ limit: 1, used: 1, remaining: 0 }, data._usage || {}));
+        return;
+      }
+      showError(errText(data.error)); return;
+    }
+    let out;
+    try { out = JSON.parse(extractText(data)); }
+    catch { showError("The model answered but not in the expected format. Tap Re-read photo to try again."); return; }
+    fillResults(out);
+  } catch (err){
+    console.error(err);
+    if ((err instanceof TypeError || !navigator.onLine) && images.length){
+      const kept = queueDraft();
+      if (kept){
+        showError(kept === images.length
+          ? "No signal. Draft saved on this device; it will be waiting next time you open with coverage."
+          : `No signal. Saved the first ${kept} photo${kept > 1 ? "s" : ""} of this draft (storage limit). Waiting for coverage.`);
+        return;
+      }
+    }
+    showError('Couldn\'t read the photo. Check your connection and tap "Re-read photo" to try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = images.length ? "Re-read photo" : "Read photo & draft";
+  }
+}
+
+/* =============================================================================
+   RESULTS -> CAPTION
+   ============================================================================= */
+function fillResults(o){
+  lastResult = o || {};
+  $("results").classList.remove("hidden");
+  $("caption").value = (o.captionDraft || "").trim();
+  $("place").value = o.locationGuess || cfg.location || "";
+  $("sig").checked = !!cfg.signature;
+
+  const notes = (o.notes || "").trim();
+  $("notes").textContent = notes ? "Model note: " + notes : "";
+  $("notes").classList.toggle("hidden", !notes);
+
+  mentionState = {};
+  const got = o.mentions && typeof o.mentions === "object" ? o.mentions : {};
+  MENTIONS.forEach(m => mentionState[m.key] = !!got[m.key]);
+
+  const suggested = Array.isArray(o.hashtags) ? o.hashtags.map(String) : [];
+  const always = parseTags(cfg.always);
+  const tags = [];
+  [...always, ...suggested].forEach(t => {
+    const clean = "#" + String(t).replace(/^#/, "").toLowerCase().replace(/[^a-z0-9_]/g, "");
+    if (clean.length > 1 && !tags.includes(clean)) tags.push(clean);
+  });
+  // Prefill only what fits under the cap (signature tag takes a slot when it's on), so the
+  // field starts clean. Anything the user adds beyond that is trimmed and reported by build().
+  const cap = Math.max(0, +cfg.cap || 0);
+  const budget = cap ? Math.max(0, cap - ($("sig").checked ? 1 : 0)) : tags.length;
+  $("hashtags").value = tags.slice(0, budget).join(" ");
+
+  renderChips();
+  bindLive();
+  build();
+  $("results").scrollIntoView({ behavior:"smooth" });
+}
+
+function renderChips(){
+  if (!MENTIONS.length){
+    $("chips").innerHTML = '<span class="empty">No accounts set up yet. Add them under Settings → Accounts to tag.</span>';
+    return;
+  }
+  $("chips").innerHTML = MENTIONS.map(m =>
+    `<div class="chip ${mentionState[m.key] ? "on" : ""}" data-k="${m.key}" role="button" tabindex="0">
+       <span class="dot"></span>${esc(m.label)} → ${esc(m.handles.join(" "))}
+     </div>`
+  ).join("");
+  $("chips").querySelectorAll(".chip").forEach(c => {
+    const toggle = () => { mentionState[c.dataset.k] = !mentionState[c.dataset.k]; c.classList.toggle("on"); build(); };
+    c.onclick = toggle;
+    c.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(); } };
+  });
+}
+
+let liveBound = false;
+function bindLive(){
+  if (liveBound) return;
+  liveBound = true;
+  ["caption","place","hashtags"].forEach(id => $(id).addEventListener("input", build));
+  $("sig").addEventListener("change", build);
+}
+
+function signatureTag(){
+  if (!cfg.signature) return "";
+  return cfg.signature.startsWith("#") ? cfg.signature : "#" + cfg.signature;
+}
+
+/* Hard-cap total hashtags. The signature tag takes a slot when it is on. Keeps the first
+   tags entered and reports how many were trimmed, so nothing is dropped silently. */
+function capHashtags(rawTags, sigOn){
+  const cap = Math.max(0, +cfg.cap || 0);
+  const tokens = rawTags.split(/\s+/).filter(Boolean).map(t => t.startsWith("#") ? t : "#" + t);
+  if (!cap) return { tags: tokens.join(" "), total: tokens.length + (sigOn ? 1 : 0), dropped: 0 };
+  const reserved = sigOn ? 1 : 0;
+  const budget = Math.max(0, cap - reserved);
+  const kept = tokens.slice(0, budget);
+  return { tags: kept.join(" "), total: reserved + kept.length, dropped: tokens.length - kept.length };
+}
+
+/* The finished caption. Handles and location are NOT in this text; they belong in the
+   platform's own Tag People and Location fields and are returned for the checklist. */
+function assemble(){
+  const cap = $("caption").value.trim();
+  const sigOn = !!cfg.signature && $("sig").checked;
+  const sig = signatureTag();
+  const lines = [];
+  if (cap) lines.push(cap);
+  if (sigOn || cfg.business || cfg.site) lines.push("");
+  if (sigOn) lines.push(sig);
+  if (cfg.business) lines.push(cfg.business);
+  if (cfg.site) lines.push(cfg.site);
+  const ht = capHashtags($("hashtags").value.trim(), sigOn);
+  if (ht.tags) lines.push(ht.tags);
+  const handles = [];
+  MENTIONS.forEach(m => { if (mentionState[m.key]) handles.push(...m.handles); });
+  const place = $("place").value.trim();
+  return { text: lines.join("\n").trim(), handles, place, tags: ht.tags, hashCount: ht.total, dropped: ht.dropped };
+}
+
+function build(){
+  const { text, hashCount, dropped, handles, place } = assemble();
+  $("preview").innerHTML = esc(text)
+    .replace(/(@[a-z0-9._]+)/gi, '<span class="m">$1</span>')
+    .replace(/(#[a-z0-9_]+)/gi, '<span class="h">$1</span>');
+  const hs = $("cHandles");
+  hs.textContent = handles.length ? handles.join("  ") : "Nothing to tag";
+  hs.className = "cval" + (handles.length ? "" : " none");
+  const pl = $("cPlace");
+  pl.textContent = place || "Leave empty";
+  pl.className = "cval" + (place ? "" : " none");
+  const cap = Math.max(0, +cfg.cap || 0);
+  $("tagCount").innerHTML = dropped > 0
+    ? `<span class="over">${hashCount}/${cap} hashtags · ${dropped} extra trimmed</span>`
+    : (cap ? `<span>${hashCount}/${cap} hashtags</span>` : `<span>${hashCount} hashtags</span>`);
+  $("charCount").textContent = `${text.length} chars` + (postTime ? ` · ${postTime}` : "");
+}
+
+/* ---------- Copy ---------- */
+$("copy").addEventListener("click", async () => {
+  const { text } = assemble();
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = document.createElement("textarea");
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); ta.remove();
+  }
+  $("copy").textContent = "Copied ✓";
+  setTimeout(() => $("copy").textContent = "Copy caption", 1600);
+});
+
+/* ---------- Share (native sheet) ---------- */
+function fileFromDataUrl(im, i){
+  try {
+    const bin = atob(im.b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let j = 0; j < bin.length; j++) bytes[j] = bin.charCodeAt(j);
+    return new File([bytes], `photo-${i + 1}.jpg`, { type: im.mediaType || "image/jpeg" });
+  } catch { return null; }
+}
+$("share").addEventListener("click", async () => {
+  const { text } = assemble();
+  try { await navigator.clipboard.writeText(text); } catch {}
+  const done = label => { $("share").textContent = label; setTimeout(() => $("share").textContent = "Share photo + caption", 2600); };
+  if (!navigator.share){ done("No share sheet here — caption copied instead"); return; }
+  const files = images.map((im, i) => im.file || fileFromDataUrl(im, i)).filter(Boolean);
+  try {
+    if (files.length && (!navigator.canShare || navigator.canShare({ files }))) await navigator.share({ files, text });
+    else await navigator.share({ text });
+    done("Shared ✓ — caption is on your clipboard");
+  } catch (e){
+    if (e && e.name !== "AbortError") done("Couldn't share — caption copied instead");
+    else done("Share photo + caption");
+  }
+});
+
+/* =============================================================================
+   OFFLINE DRAFT QUEUE
+   ============================================================================= */
+function queueDraft(){
+  const photos = images.map(im => ({ b64: im.b64, mediaType: im.mediaType }));
+  for (let keep = photos.length; keep >= 1; keep--){
+    try { localStorage.setItem(QUEUE_KEY, JSON.stringify({ when: Date.now(), photos: photos.slice(0, keep) })); return keep; }
+    catch { /* quota, try fewer */ }
+  }
+  return 0;
+}
+function readQueue(){ try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || "null"); } catch { return null; } }
+function clearQueue(){ try { localStorage.removeItem(QUEUE_KEY); } catch {} $("queueBar").classList.add("hidden"); }
+function offerQueue(){
+  const q = readQueue();
+  if (!q || !q.photos || !q.photos.length || images.length) return;
+  const n = q.photos.length;
+  $("queueInfo").textContent = `${n} photo${n > 1 ? "s" : ""} saved ${new Date(q.when).toLocaleString()} with no signal.`;
+  $("queueBar").classList.remove("hidden");
+}
+$("queueGo").addEventListener("click", () => {
+  const q = readQueue();
+  if (!q || !q.photos){ clearQueue(); return; }
+  for (const ph of q.photos.slice(0, MAX_PHOTOS)) images.push({ dataUrl:`data:${ph.mediaType};base64,${ph.b64}`, mediaType: ph.mediaType, b64: ph.b64 });
+  renderThumbs(); clearQueue(); analyze();
+});
+$("queueDrop").addEventListener("click", clearQueue);
+addEventListener("online", offerQueue);
+
+/* A stored wall can go stale: the owner may have reset this device on the proxy, or the
+   limit may have changed. On open, ask the proxy (a _ping never counts) and redraw. */
+async function refreshUsage(){
+  if (!isConfigured() || !navigator.onLine) return;
+  try {
+    const data = await callProxy(cfg.proxyUrl, cfg.proxyToken, null, { _ping: true });
+    if (data && data._usage) saveUsage(data._usage);
+  } catch { /* offline or unreachable: keep what we have */ }
+}
+
+/* ---------- Boot ---------- */
+applyCfg();
+renderUsage();
+offerQueue();
+if (!hasSavedCfg() || !isConfigured()) openSettings();
+if (limitReached()) refreshUsage();
+
+// Test hooks for automated checks. Carry no behavior.
+window.__cs = { assemble, capHashtags, parseMentions, buildPrompt, clientId, get cfg(){ return cfg; }, get usage(){ return usage; }, get images(){ return images; } };
+</script>
+</body>
+</html>
